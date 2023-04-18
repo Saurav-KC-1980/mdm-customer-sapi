@@ -1,0 +1,10 @@
+%dw 2.0
+
+type auto_0947c812_49e7_4321_8651_ecf93d9fac66_Output_Payload = {
+  responseStatus: "SUCCESS" | "ERROR" | "WARNING", 
+  resultMessages?: Array<{    severity: "ERROR" | "INFO" | "WARNING",     code: String,     message?: String,     parameters?: Array<{      paramName: String,       paramValue: String,       _?: Any    } {"description": "Represents an arbitrary name/value pair for returning extended response data"}>, 
+    _?: Any
+  } {"description": "Represents a single message to be included in the response"}>, 
+  _?: Any
+} {"description": "Represents a basic response structure that can be returned by APIs to indicate status and result messages for success or extended error scenarios"}
+

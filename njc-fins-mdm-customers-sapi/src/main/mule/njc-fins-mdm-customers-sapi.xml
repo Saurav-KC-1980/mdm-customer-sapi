@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <apikit:config name="fins-mdm-customers-sys-api-spec-2-config" api="resource::06100531-600c-494c-91cc-7f7c373b1144:njc-fins-mdm-customers-sapi:1.0.0:raml:zip:fins-mdm-customers-sys-api-spec.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="fins-mdm-customers-sys-api-spec-2-main">
+        <http:listener config-ref="mdm-sys-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="fins-mdm-customers-sys-api-spec-2-config" />
+        <error-handler ref="error-handler_common">
+            
+        </error-handler>
+    </flow>
+    <flow name="fins-mdm-customers-sys-api-spec-2-console">
+        <http:listener config-ref="mdm-sys-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="fins-mdm-customers-sys-api-spec-2-config" />
+        <error-handler ref="error-handler_common">
+            
+        </error-handler>
+    </flow>
+    <flow name="put:\parties\(partyId)\contactPoints:application\json:fins-mdm-customers-sys-api-spec-2-config">
+        <set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="419d4a26-7c85-4f28-afb3-af9bf3633c03" variableName="partyId"/>
+		<flow-ref doc:name="contactpoints_put-contactpoints" doc:id="c4c0ae61-8221-414e-bcb7-e489ebd909a2" name="contactpoints_put-contactpoints"/>
+		<error-handler ref="error-handler_common" />
+    </flow>
+    <flow name="put:\partyRoles\(partyRoleId)\externalIds:application\json:fins-mdm-customers-sys-api-spec-2-config">
+        <set-variable value="#[attributes.uriParams.'partyRoleId']" doc:name="partyRoleId" doc:id="d06423d9-e403-487b-acff-ee549003d626" variableName="partyRoleId"/>
+		<flow-ref doc:name="partyroles_put-externalids" doc:id="e5673890-ae66-478e-ab17-6ec97812c146" name="partyroles_put-externalids"/>
+		<error-handler ref="error-handler_common" />
+    </flow>
+    <flow name="put:\parties\(partyId)\externalIds:application\json:fins-mdm-customers-sys-api-spec-2-config">
+        <set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="3648f1af-0938-4ec9-b49e-a9b237f24f30" variableName="partyId"/>
+		<flow-ref doc:name="parties_put-externalids" doc:id="7a5e7160-b7ea-4e3b-9e63-45f7e5f32325" name="parties_put-externalids"/>
+    </flow>
+    <flow name="put:\parties\(partyId)\relatedParties:application\json:fins-mdm-customers-sys-api-spec-2-config">
+        <set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="21725397-a68f-40f3-bb44-497fb7a98004" variableName="partyId" />
+		<flow-ref doc:name="parties_put-related-parties" doc:id="e1d5d0b9-67c4-4213-afe2-45b7666ca465" name="parties_put-related-parties"/>
+    </flow>
+    <flow name="patch:\customers\(customerId):application\json:fins-mdm-customers-sys-api-spec-2-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="customerId" doc:id="af4c24f5-5408-416b-b787-aef790064da3" variableName="customerId"/>
+		<flow-ref doc:name="customers_patch-customer" doc:id="c596f6f5-48d4-488e-9cb1-68577d453a9a" name="customers_patch-customer"/>
+    </flow>
+    <flow name="patch:\households\(householdId):application\json:fins-mdm-customers-sys-api-spec-2-config">
+        <set-variable value="#[attributes.uriParams.'householdId']" doc:name="householdId" doc:id="8de3e507-740c-425a-a3ce-3fa7d109020b" variableName="householdId"/>
+		<flow-ref doc:name="households_patch-household" doc:id="14e81385-a6d2-4d11-bad0-0c4da8780867" name="households_patch-household"/>
+    </flow>
+    <flow name="patch:\individuals\(individualId):application\json:fins-mdm-customers-sys-api-spec-2-config">
+        <set-variable value="#[attributes.uriParams.'individualId']" doc:name="individualId" doc:id="071e04c2-94e4-41f2-803f-af98bf6d5fd9" variableName="individualId"/>
+		<flow-ref doc:name="individuals_patch-individual" doc:id="1b89582e-4a66-4799-9696-c56e85adff13" name="individuals_patch-individual"/>
+    </flow>
+    <flow name="patch:\organizations\(organizationId):application\json:fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'organizationId']" doc:name="organizationId" doc:id="58271bf8-3b63-4fc3-86af-1561adb85a0e" variableName="organizationId" />
+		<flow-ref doc:name="organizations_patch-organization" doc:id="740196b9-ec1f-45d6-860c-20e16dce5419" name="organizations_patch-organization" />
+    </flow>
+    <flow name="get:\parties\(partyId)\contactPoints:fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="03809402-55f6-4e10-bfc5-569b71ac476e" variableName="partyId" />
+		<flow-ref doc:name="contactpoints_get-contactpoints" doc:id="a33eb53a-9cc7-40ea-bcaa-5b16ce342b03" name="contactpoints_get-contactpoints" />
+    </flow>
+    <flow name="get:\customers:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="customers_get-customers-search" doc:id="25e1a133-6661-4018-92ce-9a985a2e0469" name="customers_get-customers-search" />
+    </flow>
+    <flow name="get:\partyRoles\(partyRoleId)\externalIds:fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'partyRoleId']" doc:name="partyRoleId" doc:id="c072ba23-2af8-4ab2-ad61-56bcf1810824" variableName="partyRoleId" />
+		<flow-ref doc:name="partyroles_get-externalids" doc:id="9c73bf12-b46b-44df-ac47-12d0b33a9cdf" name="partyroles_get-externalids" />
+    </flow>
+    <flow name="get:\parties\(partyId)\externalIds:fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="735cc2e7-77a5-4c50-9859-57d6af4c5ef5" variableName="partyId" />
+		<flow-ref doc:name="parties_get-externalids" doc:id="553b5159-25ef-4c8d-9ccf-24f28285eca4" name="parties_get-externalids" />
+    </flow>
+    <flow name="get:\households:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="households_get-households-search" doc:id="743c62e6-4531-4ef1-836a-d8a26e951c4c" name="households_get-households-search" />
+    </flow>
+    <flow name="get:\individuals:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="individuals_get-individuals-search" doc:id="e2313094-e6de-45d0-a094-02378e1e7e50" name="individuals_get-individuals-search" />
+    </flow>
+    <flow name="get:\organizations:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="organizations_get-organizations-search" doc:id="5f6093d8-a072-48c9-b6d3-4182f28eb9f1" name="organizations_get-organizations-search" />
+    </flow>
+    <flow name="get:\parties:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="parties_get-parties" doc:id="58e398e0-97bf-4ae4-a792-cd048b8ad8a7" name="parties_get-parties" />
+    </flow>
+    <flow name="get:\partyRoles:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="partyroles_get-partyroles" doc:id="6c3ab55c-cbc4-41b0-a91e-54e6094fbc9e" name="partyroles_get-partyroles" />
+    </flow>
+    <flow name="get:\ping:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="ping_get-health" doc:id="4b313532-8e47-4020-8f94-a104ccbdda88" name="ping_get-health" />
+    </flow>
+    <flow name="get:\parties\(partyId)\relatedParties:fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="5da32589-1d56-4f24-8888-745c4abb59c8" variableName="partyId" />
+		<flow-ref doc:name="parties_get-related-parties" doc:id="ee87e9ed-241c-4913-bb41-314aea85394b" name="parties_get-related-parties" />
+    </flow>
+    <flow name="get:\customers\(customerId):fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'customerId']" doc:name="customerId" doc:id="e584c27f-75c2-4ab0-86aa-60d9290fc1f7" variableName="customerId" />
+		<flow-ref doc:name="customers_get-customer" doc:id="f2f0bf7c-fec3-43a5-bb09-30eba1ff2135" name="customers_get-customer" />
+    </flow>
+    <flow name="get:\households\(householdId):fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'householdId']" doc:name="householdId" doc:id="a1534306-7ded-4c4c-9822-8a3772fd6726" variableName="householdId" />
+		<flow-ref doc:name="households_get-household" doc:id="4cb8f737-826b-4145-93a8-a7201cf08ded" name="households_get-household" />
+    </flow>
+    <flow name="get:\individuals\(individualId):fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'individualId']" doc:name="individualId" doc:id="41a7ed5d-21b9-4bba-b77a-b87af5cf74b9" variableName="individualId" />
+		<flow-ref doc:name="individuals_get-individual" doc:id="f317941a-e079-4304-b5b3-c6d955336aaa" name="individuals_get-individual" />
+    </flow>
+    <flow name="get:\organizations\(organizationId):fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'organizationId']" doc:name="organizationId" doc:id="262969b6-6fe9-4884-bcbd-ac9bd8b74cdc" variableName="organizationId" />
+		<flow-ref doc:name="organizations_get-organization" doc:id="7ac37661-872a-4162-93a7-1cff8766fe17" name="organizations_get-organization" />
+    </flow>
+    <flow name="get:\parties\(partyId):fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="a967fe8e-36b8-46f1-8aeb-9116ee780a3d" variableName="partyId" />
+		<flow-ref doc:name="parties_get-party" doc:id="14cbc5d9-96d2-4350-9141-a2282d4648e1" name="parties_get-party" />
+    </flow>
+    <flow name="get:\partyRoles\(partyRoleId):fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'partyRoleId']" doc:name="partyRoleId" doc:id="a9447325-5aef-4477-a2eb-c7a7177af8a9" variableName="partyRoleId" />
+		<flow-ref doc:name="partyroles_get-partyrole" doc:id="cbb047ce-8b57-49de-950d-c61f0b2e7edf" name="partyroles_get-partyrole" />
+    </flow>
+    <flow name="post:\parties\(partyId)\contactPoints:application\json:fins-mdm-customers-sys-api-spec-2-config">
+		<set-variable value="#[attributes.uriParams.'partyId']" doc:name="partyId" doc:id="eb4b1ea3-cc12-423e-b5c5-3096e2577ca6" variableName="partyId" />
+		<flow-ref doc:name="contactpoints_post-contactpoints" doc:id="be692064-f9b7-4582-bad0-4dbea141b6ce" name="contactpoints_post-contactpoints" />
+    </flow>
+    <flow name="post:\customers:application\json:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="customers_post-customers" doc:id="a3f2661b-f460-4636-8d20-46957e4d9a2d" name="customers_post-customers" />
+    </flow>
+    <flow name="post:\households:application\json:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="households_post-households" doc:id="425346ad-7dbe-4984-97be-b2bbf30aac04" name="households_post-households" />
+    </flow>
+    <flow name="post:\individuals:application\json:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="individuals_post-individuals" doc:id="37dbe808-f2f1-4a6f-a012-8b551a970c25" name="individuals_post-individuals" />
+    </flow>
+    <flow name="post:\organizations:application\json:fins-mdm-customers-sys-api-spec-2-config">
+		<flow-ref doc:name="organizations_post-organizations" doc:id="4d571749-5a7c-4067-84b5-2fb0742aa61c" name="organizations_post-organizations" />
+    </flow>
+</mule>

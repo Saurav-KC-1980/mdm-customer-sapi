@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+		<sub-flow name="partyroles_get-partyrole" doc:id="3b594db7-6ad3-4580-9e30-941c0c9c6fea" >
+		<logger level="INFO" doc:name="Log retrieve" doc:id="ec55fe5c-cf63-4023-a92e-45c59d35c531" message="Retrieving by Party Role Id"/>
+		<set-variable value="#[vars.partyRoleId]" doc:name="customerId" doc:id="e909b956-74c8-4797-b500-2e7dc6258503" variableName="customerId"/>
+		<flow-ref doc:name="customers_get-customer" doc:id="6ae1eaa4-2627-4638-ba3a-bf5c32b5f5c5" name="customers_get-customer" target="currentCustomer" />
+		<choice doc:name="Check if customer exists before getting party details" doc:id="a123ff9c-2e9c-4ca5-9803-76110f9202b8" >
+			<when expression="#[vars.currentCustomer.id != null]">
+				<ee:transform doc:name="party" doc:id="fbeb3739-5de8-4d91-a1da-b3dd30f60b5f">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="currentParty"><![CDATA[%dw 2.0
+output application/json
+---
+vars.currentCustomer.party[0]]]></ee:set-variable>
+				<ee:set-variable variableName="partyId"><![CDATA[%dw 2.0
+output application/java
+---
+vars.currentCustomer.party[0].id]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="contactpoints_get-contactpoints" doc:id="973d5ee3-f8df-4b1e-8634-c9931a1f70b9" name="contactpoints_get-contactpoints" target="currentContactPoints" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Party Role does not exists" doc:id="da49147b-c446-4b3c-8767-83eca7cb4273" message='#["PartyRole Does Not Exists for Party Role Id: " ++ vars.customerId]'/>
+				<set-variable value="404" doc:name="Set httpStatus" doc:id="b6622eaf-f573-4f99-9550-43ce9e5f70b4" variableName="httpStatus"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Map response" doc:id="86cc92ad-2d09-47c7-a2bc-96b0fec134f0">
+			<ee:message>
+				<ee:set-payload resource="dwl/party-roles-get-partyrole-response.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/json
+---
+if (vars.httpStatus == null and vars.currentCustomer != null) 
+200
+else
+404]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="partyroles_get-partyroles" doc:id="fd466c7c-0a82-4ab5-bb83-d4e4d9121cbd" >
+			<logger level="INFO" doc:name="Log Request" doc:id="0a10ab1f-4b12-410e-9539-df389d684b07" message="#[attributes.queryParams]"/>
+		<ee:transform doc:name="Input Query Parameters" doc:id="da0f4d8e-0e6e-4f81-9616-a017e0dd7e83" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+
+				<ee:set-variable variableName="externalId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.externalId]]></ee:set-variable>
+	<ee:set-variable variableName="externalIdType" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.externalIdType]]></ee:set-variable>
+				<ee:set-variable variableName="partyId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.partyId]]></ee:set-variable>
+				<ee:set-variable variableName="partyRoleId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.partyRoleId]]></ee:set-variable>
+			
+				<ee:set-variable variableName="partyRoleType" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.partyRoleType]]></ee:set-variable>
+			
+<ee:set-variable variableName="offset" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.offset default p('mdm.database.default-offset')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.limit default p('mdm.database.default-limit')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="outputDBRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Create Query based on Input Parameters" doc:id="3e98f983-3828-4c3b-b8f4-ff0da6916a8d" >
+			<ee:message >
+				<ee:set-payload resource="dwl/partyroles-partyrolesquery.dwl" />
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="50b816eb-5e73-490a-8a86-1780bb54e687" >
+			<foreach doc:name="Execute All Queries in Sequence only if no results" doc:id="9a73a040-e392-4705-aa84-d8788f81303c" collection="#[payload]">
+			<choice doc:name="Check for Valid Query only if No Previous Results for previous query" doc:id="574fa272-474f-40b6-be96-8cc4551d44a9">
+				<when expression="#[payload != null and (sizeOf(vars.outputDBRecords) == 0)]">
+					<db:select doc:name="Select PartyRoles by QueryParam" doc:id="5504d0cf-66d1-4528-8deb-3e18ba2923a1" config-ref="mdm-db-config">
+						<db:sql><![CDATA[#[payload]]]></db:sql>
+					</db:select>
+					<ee:transform doc:name="Transform Message" doc:id="a0b55afb-4aab-4277-8e0a-b67a66fee807">
+						<ee:message>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="outputDBRecords"><![CDATA[%dw 2.0
+output application/java
+---
+if(sizeOf(payload)>0)
+	flatten(vars.outputDBRecords + payload) 
+else 
+	vars.outputDBRecords]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</when>
+					<otherwise >
+						<logger level="INFO" doc:name="No Results" doc:id="fa0483cf-5c68-4b8b-bf3d-f53a3c1c4fd0" message="No Results"/>
+					</otherwise>
+			</choice>
+		</foreach>
+			<set-payload value="#[vars.outputDBRecords]" doc:name="Set Payload as outputDBRecords" doc:id="ded25d59-efab-4af2-abae-02b23947f564" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c390fd80-8c92-47d4-a3a2-e84a4a28bcc7" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="a2e0412c-a9f9-4e81-8bd1-eb2ffdd8858a" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="39ecbba1-183d-4e05-be59-e7602d57923f" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="d9bddd67-8e01-47e8-ba64-733f5abb605b">
+			<ee:message>
+						<ee:set-payload resource="dwl/partyroles-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="partyroles_get-externalids" doc:id="474fb2c0-e5fa-471b-bcd1-732e03b04c6d" >
+		<logger level="INFO" doc:name="Log Request" doc:id="079c17fc-f06a-4eb5-9fd0-3e30544e0e9d" message="#[vars.partyRoleId]"/>
+		<try doc:name="Try" doc:id="dc235bd8-9f25-4b07-b739-cc7af385d7f2" >
+			<db:select doc:name="Select Party Roled Id" doc:id="fb172d4d-570c-4736-8005-f50ba38be7e1" config-ref="mdm-db-config">
+			<db:sql><![CDATA[select  pr.PARTY_ROLE_TYPE, pr.ID  from PARTY_ROLE pr where pr.ID = :partyRoleId ]]></db:sql>
+			<db:input-parameters><![CDATA[#[partyRoleId : vars.partyRoleId]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ae0b17da-912b-4189-95ce-7b6ddf32fc4f" >
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="9d220583-2f77-48e0-8226-36ec051ba6b0" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="49903a5b-7480-410b-9fbe-d53081e0b1ea" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="de4be0ca-a304-41d1-8b8c-2789631954a2" >
+			<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="275f6460-37c5-47e0-a15b-ee414824dd63" message="Party Role not found" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="55120308-0d6f-42fb-ac80-cb0ae6e4175d" >
+					<set-variable value="404" doc:name="Set Variable" doc:id="84275cb8-e96e-4d5b-aa9a-23588646fb2e" variableName="httpStatus"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="e8f979b2-b3e2-42d9-a84f-d26e3d8463ff" >
+			<db:select doc:name="Select External Ids" doc:id="16184c77-813f-41b1-a06e-8f182af056b8" config-ref="mdm-db-config">
+			<db:sql><![CDATA[select ei.ID ID,eipj.EXTERNAL_ID EXTERNAL_ID_ID ,ei.EXTERNAL_ID EXTERNAL_ID,ei.EXTERNAL_ID_TYPE EXTERNAL_ID_TYPE,ei.STATUS STATUS,ei.STATUS_LAST_CHANGED_DATE STATUS_LAST_CHANGED_DATE , eit.ID EXTERNAL_ID_TYPE_ID, eit.NAME EXTERNAL_ID_TYPE_NAME
+from EXTERNAL_ID_PARTY_ROLE_JOIN eipj,EXTERNAL_ID ei,EXTERNAL_ID_TYPE eit, PARTY_ROLE pr where pr.ID = :partyRoleId and eipj.PARTY_ROLE_ID  = pr.ID  and ei.id = eipj.EXTERNAL_ID and  eit.ID = ei.EXTERNAL_ID_TYPE;]]></db:sql>
+				<db:input-parameters ><![CDATA[#[partyRoleId : vars.partyRoleId]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a38b0305-ac5e-4b1a-b363-25996e09a790" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="6d65a794-dcf4-45a7-98c8-4d8b099dd971" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="dc356c95-ce8d-4081-ba5e-d97bba14c3c6" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="f2d6cdf6-c66b-4d0a-b3b0-3cd1fa93ee62">
+			<ee:message>
+				<ee:set-payload resource="dwl/get-externalids-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+		<sub-flow name="partyroles_put-externalids" doc:id="0947c812-49e7-4321-8651-ecf93d9fac66" >
+		<logger level="INFO" doc:name="Log Request" doc:id="6993241a-61ab-497a-8e3b-33ebead9e504" message="#[vars.partyRoleId]"/>
+				<ee:transform doc:name="Map to DB Request" doc:id="f25825e4-e3d5-47d3-b4f2-9d099de0654e" >
+			<ee:message >
+				<ee:set-payload resource="dwl/post-externalids-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="d6e5f002-8272-4dd7-9716-65f623d64bbb" >
+			<db:stored-procedure doc:name="Call PartyRole_ExternalIds_Upsert" doc:id="f1f4d179-c803-4c25-8491-a6792ad5768c" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{call PartyRole_ExternalIds_Upsert(:externalIdsRequestJSON,:partyRoleId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+	externalIdsRequestJSON : write(payload, "application/json"),
+	partyRoleId: vars.partyRoleId
+}]]]></db:input-parameters>
+				<db:output-parameters >
+					<db:output-parameter key="externalIds" type="VARCHAR" />
+				</db:output-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ae5d749e-2ebd-4a60-98a3-c64454d5ca54" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="cf80d5d4-fbaa-4921-972d-9dc555e7c2c4" name="common-error-handler_connector-exception"/>
+					<set-variable value="500" doc:name="httpStatus" doc:id="125b4637-925b-4bc4-bfd4-837a81152f97" variableName="httpStatus" />
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="25b198f4-ca2c-4392-922a-5eeb5c118cec" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		
+		
+		
+			<ee:transform doc:name="Success Response">	
+				<ee:message>
+				<ee:set-payload resource="dwl/individuals-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+200]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+
+
+</mule>

@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="parties_get-party" doc:id="2a39b96b-7232-42bc-8e7a-79ef451a7b9a" >
+		<logger level="INFO" doc:name="Log retrieve" doc:id="c0083bf2-a9f8-48a5-b307-ebe4a19a611d" message="Retrieving by Party Id"/>
+		<db:select doc:name="Select Party Type" doc:id="2af108ab-59e0-4426-a892-d8f6af518294" config-ref="mdm-db-config" target="partyType" targetValue="#[payload.PARTY_TYPE[0]]">
+			<db:sql ><![CDATA[select p.PARTY_TYPE from PARTY p where p.ID=:partyId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[partyId: vars.partyId]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="9cf99ebd-e4a6-4677-a9c8-eda02af0f8f6" >
+			<when expression='#[vars.partyType != null and vars.partyType=="Individual"]'>
+				<set-variable value="#[vars.partyId]" doc:name="individualId" doc:id="7894199f-dfaf-4316-bd27-1327825946a1" variableName="individualId" />
+				<flow-ref doc:name="individuals_get-individual" doc:id="f85a95d9-3131-4188-b382-a0587e3b27b0" name="individuals_get-individual" target="currentParty"/>
+			</when>
+			<when expression='#[vars.partyType != null and vars.partyType=="Organization"]'>
+				<set-variable value="#[vars.partyId]" doc:name="organizationId" doc:id="0f3d739a-b37e-4333-af0b-f3df1b31fc95" variableName="organizationId"/>
+				<flow-ref doc:name="organizations_get-organization" doc:id="a743b148-0e00-46a1-8332-d76db50a1a24" name="organizations_get-organization" target="currentParty"/>
+			</when>
+			<when expression='#[vars.partyType != null and vars.partyType=="Household"]'>
+				<set-variable value="#[vars.partyId]" doc:name="householdId" doc:id="5631d999-9160-4e06-a0cb-04c9d1a9cc5b" variableName="householdId"/>
+				<flow-ref doc:name="households_get-household" doc:id="20438e80-1d42-4ca6-b6d3-31b5e6765c04" name="households_get-household" target="currentParty"/>
+			</when>
+			
+			<otherwise >
+				<set-variable value="#[null]" doc:name="currentParty" doc:id="b24e40ac-92d7-4a65-b872-cc245232acde" variableName="currentParty"/>
+			</otherwise>
+		</choice>
+		<flow-ref doc:name="contactpoints_get-contactpoints" doc:id="325fc528-a6a8-41d2-b84d-df3bfab9a35a" name="contactpoints_get-contactpoints" target="currentContactPoints" />
+		<ee:transform doc:name="Map response" doc:id="776a7b20-c294-4e88-b464-d9c8ca34ee53">
+			<ee:message>
+				<ee:set-payload resource="dwl/parties-get-party-response.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/json
+---
+if (vars.httpStatus == null and vars.currentParty != null) 
+200
+else
+404]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="parties_get-parties" doc:id="fd466c7c-0a82-4ab5-bb83-d4e4d9121cbd" >
+		
+				<logger level="INFO" doc:name="Log Request" doc:id="b1da2273-784e-46f7-8c9f-9dd539706c17" message="#[attributes.queryParams]"/>
+		<ee:transform doc:name="Input Query Parameters" doc:id="399f3c1c-cbf6-4a53-9d50-86e9368a4dbd" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="externalId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.externalId]]></ee:set-variable>
+				<ee:set-variable variableName="emailAddress" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.emailAddress]]></ee:set-variable>
+			<ee:set-variable variableName="externalIdType" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.externalIdType]]></ee:set-variable>
+
+				<ee:set-variable variableName="partyId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.partyId]]></ee:set-variable>
+				<ee:set-variable variableName="partyType" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.partyType]]></ee:set-variable>
+<ee:set-variable variableName="offset" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.offset default p('mdm.database.default-offset')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.limit default p('mdm.database.default-limit')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="outputDBRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Create Query based on Input Parameters" doc:id="baad121c-ed53-4e7e-be17-a4c2bfefef0e" >
+			<ee:message >
+				<ee:set-payload resource="dwl/parties-query.dwl" />
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="ace583ec-96c6-4f5c-817a-efb7d62d1c5e" >
+			<foreach doc:name="Execute All Queries in Sequence only if no results" doc:id="15934fcf-811c-4c63-be96-92f568449f17" collection="#[payload]">
+				<choice doc:name="Check for Valid Query only if No Previous Results for previous query" doc:id="cb527dc7-abfa-408a-9a67-7abc4323c46f">
+				<when expression="#[payload != null and (sizeOf(vars.outputDBRecords) == 0)]">
+					<db:select doc:name="Select Parties on Input Params" doc:id="3a8da6fc-0b0e-41b4-8ccd-1162592e88aa" config-ref="mdm-db-config">
+			<db:sql><![CDATA[#[payload]]]></db:sql>
+		</db:select>
+						<ee:transform doc:name="Transform Message" doc:id="075d753f-25b3-4c9d-9c30-605326c715ae" >
+							<ee:message >
+							</ee:message>
+							<ee:variables >
+								<ee:set-variable resource="dwl/parties-search-outputDBRecords.dwl" variableName="outputDBRecords" />
+							</ee:variables>
+						</ee:transform>
+				</when>
+					<otherwise>
+						<logger level="INFO" doc:name="No Records" doc:id="81061b17-af5e-44b3-b398-b3dcb58b43e2" message="No Records"/>
+				</otherwise>
+			</choice>
+			</foreach>
+			<set-payload value="#[vars.outputDBRecords]" doc:name="Set outputDBRecords and Result" doc:id="dbdad45f-2b77-4ca8-a2e1-1ae0bcfad30c" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c9223c38-7b47-4bae-b0e3-085ec05888ef" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="e30f3e23-8e03-4fe4-b31c-0921145290dc" name="common-error-handler_connector-exception"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="3a93fb2b-5442-4ba8-80f1-e03a978201ec">
+			<ee:message>
+						<ee:set-payload resource="dwl/parties-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+<sub-flow name="parties_get-externalids" doc:id="2b8d27ea-cb9f-4634-894f-b631b2cb6185" >
+		<logger level="INFO" doc:name="Log Request" doc:id="d6064253-0809-4736-a580-655e1012e1bf" message="#[vars.partyId]"/>
+		<try doc:name="Try" doc:id="cba53d1c-f5c3-49d9-a775-a645b688b5b6" >
+			<db:select doc:name="Select Party Id" doc:id="e59fbaeb-447f-4296-81a7-7b8329d7f30f" config-ref="mdm-db-config">
+			<db:sql><![CDATA[select  pr.ID  from PARTY pr where pr.ID = :partyId ]]></db:sql>
+			<db:input-parameters><![CDATA[#[partyId : vars.partyId]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d02ca98a-6615-4cf2-9a03-d87327dddc97" >
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="ddc94a9f-3f6d-415d-b37d-f53c5847220f" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="fdf3bfa0-5af1-47c0-baf8-612300b66568" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="ae4a86f0-5e27-4ba0-aa66-3bd84f9f3dea" >
+			<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="be993856-da37-45cb-9d8c-3f76d02dff6f" message="Party not found" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e56bd1e7-792d-49e2-be7b-74368d2bedf1" >
+					<set-variable value="404" doc:name="Set Variable" doc:id="094463ff-4308-444d-83f2-19cc0f240f6c" variableName="httpStatus"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="b66ae7da-2313-4b92-b198-5f0417acb4dc" >
+			<db:select doc:name="Select External Ids" doc:id="959d552a-264c-4b30-bed7-a21010266b4a" config-ref="mdm-db-config">
+			<db:sql><![CDATA[Select ei.ID ID,eipj.EXTERNAL_ID EXTERNAL_ID_ID ,ei.EXTERNAL_ID EXTERNAL_ID,ei.EXTERNAL_ID_TYPE EXTERNAL_ID_TYPE,ei.STATUS STATUS,ei.STATUS_LAST_CHANGED_DATE STATUS_LAST_CHANGED_DATE , eit.ID EXTERNAL_ID_TYPE_ID, eit.NAME EXTERNAL_ID_TYPE_NAME
+from EXTERNAL_ID_PARTY_JOIN eipj,EXTERNAL_ID ei,EXTERNAL_ID_TYPE eit where eipj.PARTY_ID  = :partyId  and ei.id = eipj.EXTERNAL_ID and  eit.ID = ei.EXTERNAL_ID_TYPE;]]></db:sql>
+				<db:input-parameters ><![CDATA[#[partyId : vars.partyId]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="eaa4bb39-4a67-4969-bb16-a88684c257f8" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="539aca4b-9fa1-463a-b546-88485ab37971" name="common-error-handler_connector-exception"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="d3cd535c-cce1-4ea8-9eaa-8f085a68c261">
+			<ee:message>
+						<ee:set-payload resource="dwl/get-externalids-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+		<sub-flow name="parties_put-externalids" doc:id="f77d3af7-d03d-44ee-994c-03aeae6b7fc0" >
+		<logger level="INFO" doc:name="Log Request" doc:id="d7bc9813-41e2-4b21-9526-a92018e3e03c" message="#[vars.partyId]"/>
+			<ee:transform doc:name="Map to DB Columns" doc:id="c4d0d2a7-7abe-4d7b-b5e9-fe7f1daebecb" >
+			<ee:message >
+				<ee:set-payload resource="dwl/post-externalids-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="9c1056f5-c62b-405b-a7d8-669969064cf7" >
+			<db:stored-procedure doc:name="Call Parties_ExternalIds_Upsert" doc:id="fc64e5e2-f030-4b62-83d9-2005a875ed60" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call Parties_ExternalIds_Upsert(:externalIdsRequestJSON,:partyId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+	externalIdsRequestJSON : write(payload, "application/json"),
+	partyId: vars.partyId
+}]]]></db:input-parameters>
+				<db:output-parameters >
+					<db:output-parameter key="externalIds" type="VARCHAR" />
+				</db:output-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="82790c45-cc21-491b-954d-29928ac99734" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="08929656-7c4d-4900-a2f4-6466d8c80e4e" name="common-error-handler_connector-exception"/>
+					<set-variable value="500" doc:name="httpStatus" doc:id="1ddb98a8-55b5-4269-9dce-b9f45b5fd02b" variableName="httpStatus" />
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="07231549-f5fd-43c0-b558-a7114d6f63a7" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Success Response">	
+				<ee:message>
+						<ee:set-payload resource="dwl/parties-put-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+vars.httpStatus default 200]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="parties_get-related-parties" doc:id="3bb5c0af-6176-474d-90f7-b29b0a93e942" >
+		<logger level="INFO" doc:name="Log Request" doc:id="08b4596c-893b-410f-a992-c051e1ce1123" message="#[vars.partyId]"/>
+		<try doc:name="Try" doc:id="b569e3e6-0071-4827-bb2e-595ed44512d4" >
+			<db:select doc:name="Select Related Parties" doc:id="ce8e4625-2787-488b-945b-ef9661147c2f" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[select prp.ID,prp.PARTY_RELATED_PARTY_ID,prp.PARTY_RELATIONSHIP_TYPE,prp.PARTY_ID,prp.RELATED_FROM_DATE,prp.RELATED_TO_DATE,prp.CREATED_BY,prp.CREATED_DATE,prp.UPDATED_BY,prp.UPDATED_DATE,prt.NAME,p.PARTY_TYPE RELATED_PARTY_TYPE, (select p.PARTY_TYPE from PARTY p where p.ID=:partyId) PARTY_TYPE from PARTY_RELATED_PARTY prp,PARTY_RELATIONSHIP_TYPE prt,PARTY p where prp.PARTY_ID=:partyId and prt.ID =prp.PARTY_RELATIONSHIP_TYPE and p.ID = prp.PARTY_RELATED_PARTY_ID]]></db:sql>
+				<db:input-parameters ><![CDATA[#[partyId : vars.partyId]]]></db:input-parameters>
+		</db:select>
+			<flow-ref doc:name="parties_get-parties" doc:id="657e5564-5602-474d-be53-43f732735694" name="parties_get-externalids" target="partyExternalIds"/>
+			<flow-ref doc:name="parties_get-related-parties-externalids" doc:id="b8093438-05f9-4db0-8256-217e48760dd6" name="parties_get-related-parties-externalids" target="relatedPartiesExternalIds"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f31de773-ece1-40ec-b11b-85f38a23c20f" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="3299cd59-7879-482e-a119-d538643d1360" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="45e1c766-14f4-44a5-8091-df3202a33c4e" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="fe6c2b07-270e-466c-aa71-8543143d3510">
+			<ee:message>
+						<ee:set-payload resource="dwl/get-related-parties-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+		<sub-flow name="parties_put-related-parties" doc:id="847f850b-bf6e-4dbe-823e-3e25b124ac55" >
+		<logger level="INFO" doc:name="Log Request" doc:id="2db86d02-5197-478d-b3fd-eb95a699cb11" message="#[vars.partyId]"/>
+			<ee:transform doc:name="Map to DB Columns" doc:id="2ca0daf5-05f1-4a34-918f-a234fc341fea" >
+			<ee:message >
+				<ee:set-payload resource="dwl/put-related-parties-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="517a78cc-50c7-4e3f-87b6-843a329c0f97" >
+			<db:stored-procedure doc:name="Call Parties_RelatedParties_Upsert" doc:id="6d3c1741-1a02-42f2-a4ba-f91391d3853a" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call Parties_RelatedParties_Upsert(:relatedPartiesRequestJSON,:partyId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+	relatedPartiesRequestJSON : write(payload, "application/json"),
+	partyId: vars.partyId
+}]]]></db:input-parameters>
+				<db:output-parameters >
+					<db:output-parameter key="externalIds" type="VARCHAR" />
+				</db:output-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="de597839-7d4b-4f9f-9b85-d124a348f764" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="32cde53e-66da-4dce-83ff-1e5c42006111" name="common-error-handler_connector-exception"/>
+					<set-variable value="500" doc:name="httpStatus" doc:id="f39997b5-c368-4563-a577-c4c6aab18d41" variableName="httpStatus" />
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="e15e1204-0550-4922-a96d-b3bd7b61f54c" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Success Response">	
+				<ee:message>
+						<ee:set-payload resource="dwl/parties-put-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+vars.httpStatus default 200]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="parties_get-related-parties-externalids" doc:id="884e7c4f-8121-40f4-a7ed-9e27d148461e" >
+		<choice doc:name="Check if there are relatedParties" doc:id="54056644-0a4f-4971-96e3-f179e2a965e5" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<ee:transform doc:name="inClauseParameters" doc:id="530df8f6-8e0b-477c-a216-ec45bdc442ae">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="inClauseParameters"><![CDATA[%dw 2.0
+output application/java
+---
+payload.PARTY_RELATED_PARTY_ID  map ":arg$$" reduce ((item, accumulator) -> accumulator ++ ", " ++ item)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<ee:transform doc:name="inputParameters" doc:id="0073e4b5-fc1e-4ba0-8fcf-1ef5468e4f15">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="inputParameters"><![CDATA[%dw 2.0
+output application/java
+---
+payload.PARTY_RELATED_PARTY_ID  map {"arg$$" : $} reduce ((item, accumulator = {}) -> item ++ accumulator)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<db:select doc:name="Select externalIds for relatedParties" doc:id="d666f067-136f-42ac-8ff3-8d0d2e022b4a" config-ref="mdm-db-config">
+			<db:sql><![CDATA[#['Select ei.ID ID,eipj.EXTERNAL_ID EXTERNAL_ID_ID ,ei.EXTERNAL_ID EXTERNAL_ID,ei.EXTERNAL_ID_TYPE EXTERNAL_ID_TYPE,ei.STATUS STATUS,ei.STATUS_LAST_CHANGED_DATE STATUS_LAST_CHANGED_DATE , eit.ID EXTERNAL_ID_TYPE_ID, eit.NAME EXTERNAL_ID_TYPE_NAME,eipj.PARTY_ID 
+from EXTERNAL_ID_PARTY_JOIN eipj,EXTERNAL_ID ei,EXTERNAL_ID_TYPE eit where ei.id = eipj.EXTERNAL_ID and  eit.ID = ei.EXTERNAL_ID_TYPE and eipj.PARTY_ID  in ($(vars.inClauseParameters))']]]></db:sql>
+			<db:input-parameters><![CDATA[#[vars.inputParameters]]]></db:input-parameters>
+		</db:select>
+				<ee:transform doc:name="groupBy relatedParties" doc:id="cdd9d373-ac82-405a-ba29-baa9ed9b2b9d">
+			<ee:message>
+				<ee:set-payload resource="dwl/parties-related-parties-externalids.dwl" />
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="4d4aa3f4-dbf7-440e-a592-8ee444bd3cc2" message="No Related Parties to fetch externalIds"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+
+</mule>

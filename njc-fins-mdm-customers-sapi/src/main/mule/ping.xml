@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="ping_get-health" doc:id="697340ce-9574-43e8-a253-00bfbfa5a7c1" >
+		<set-variable value='#[attributes.queryParams.checkDependencies == "true" default false]' doc:name="checkDependencies" doc:id="5d893919-8cbd-4602-a3b3-71e76ec3c5a5" variableName="checkDependencies"/>
+		<choice doc:name="Choice" doc:id="d78d9d67-db9a-4c20-a93b-47bffbe75c0f" >
+			<when expression="#[vars.checkDependencies]">
+				<flow-ref doc:name="Check Dependencies" doc:id="24341dfa-b323-43b1-ae9b-faa4e32ce21f" name="ping_check-dependencies" target="dependencyList"/>
+			</when>
+			<otherwise>
+				<set-variable doc:name="dependencyList" doc:id="5eeed13a-9f98-462d-850c-64eafe322a46" variableName="dependencyList" value="#[null]"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Response Message" doc:id="cf57da56-6926-4289-a199-ffb5ab8340f5" >
+			<ee:message >
+				<ee:set-payload resource="dwl/ping-check-dependency-sys-api-response.dwl" />
+			</ee:message>
+		</ee:transform>
+		<set-variable value="200" doc:name="httpStatus" doc:id="91522169-41fa-4dec-a573-4a8e28c875e5" variableName="httpStatus"/>
+	</sub-flow>
+	<sub-flow name="ping_check-dependencies" doc:id="7373f8bd-168b-47cf-b15d-0d2e4612cc25" >
+		<flow-ref doc:name="ping_check-dependency-mdm-db" doc:id="5f862028-4287-48fd-bba9-0b7dd44d0f3f" name="ping_check-dependency-mdm-db"/>
+	</sub-flow>
+	<sub-flow name="ping_check-dependency-mdm-db" doc:id="75f0907c-7eda-42da-a5a0-c8e63be91a13" >
+		<set-variable value="#[p('mdm.database.host')]" doc:name="sysCheckHost" doc:id="f05a3022-e60c-4bdf-ad08-880ab5cb42f5" variableName="sysCheckHost"/>
+			
+			<try doc:name="Try" doc:id="700a2e9f-8064-4ea2-8c92-859dcff151e2" >
+			<db:select doc:name="Select Party" doc:id="49e1d5d8-0393-40e0-9df4-f742a364f451" config-ref="mdm-db-config">
+			<db:sql><![CDATA[select p.ID from PARTY p where p.ID='test';]]></db:sql>
+		</db:select>
+			<set-variable value="#['UP']" doc:name="backendSystemStatus" doc:id="cbeea2ec-5549-452c-bfab-9d5d0a303213" variableName="backendSystemStatus"/>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="34d90de9-bc1b-44da-ace9-e1240a9a20ec" type="DB:CONNECTIVITY">
+					<set-variable value="#['DOWN']" doc:name="backendSystemStatus" doc:id="9d3c4409-234d-4e6d-a78d-33c6c98cd872" variableName="backendSystemStatus" />
+				</on-error-continue>
+								<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c2a916ca-2a65-4fd9-b227-332cbec06634" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<set-variable value="#['ERROR']" doc:name="backendSystemStatus" doc:id="1e58ad5a-a36e-4a9b-bfa8-0aea64fcff34" variableName="backendSystemStatus" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Dependency Status Response" doc:id="79ed1303-bf07-4ac0-a476-dfdf0117c2f2">
+				<ee:message>
+				<ee:set-payload resource="dwl/ping-check-dependency-db-response.dwl" />
+				</ee:message>
+			</ee:transform>
+			
+	
+		</sub-flow>
+	
+	
+</mule>

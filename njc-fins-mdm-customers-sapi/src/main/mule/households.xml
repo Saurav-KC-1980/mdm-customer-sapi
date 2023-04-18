@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="households_post-households" doc:id="fd466c7c-0a82-4ab5-bb83-d4e4d9121cbd" >
+		<ee:transform doc:name="Map to DB Columns" doc:id="7f3ea0ba-9766-4c3b-8a18-4ba11ba64075" >
+			<ee:message >
+				<ee:set-payload resource="dwl/households-post-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="dc9264a1-8d5a-46b5-9691-c37e00fd86ad" >
+			<db:stored-procedure doc:name="Call Households_Upsert" doc:id="1ed65b70-e1db-4551-83c6-5d63367cdaa0" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call Households_Upsert(:householdsRequestJSON,:householdId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+	householdsRequestJSON : write(payload, "application/json")
+}]]]></db:input-parameters>
+				<db:output-parameters >
+					<db:output-parameter key="householdId" type="NVARCHAR" />
+				</db:output-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="52833dd6-0165-46e1-b158-4f664ab4b5f4" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="15310b44-926c-4b03-a0e3-e4cff3f41dd8" name="common-error-handler_connector-exception"/>
+					<set-variable value="409" doc:name="httpStatus" doc:id="6c7fc100-66c9-4ab8-8ad1-81c1f2214a09" variableName="httpStatus" />
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="6485b1b9-71eb-4f7d-b4af-095a9c83e423" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="ae668616-cf37-41ed-9693-922cc34ae466" doc:name="Map Response">
+			<ee:message>
+				<ee:set-payload resource="dwl/individuals-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+201]]></ee:set-variable>
+						<ee:set-variable resource="dwl/households-create-response-headers.dwl" variableName="outboundHeaders" />
+			
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="households_patch-household" doc:id="b3fef144-f5f3-47d2-8bd3-b8eb996342c7" >
+		<flow-ref doc:name="households_get-household" doc:id="b1c91070-769a-4249-ab97-6fe99e1a17b4" name="households_get-household" target="householdDBRecord"/>
+		<choice doc:name="Choice" doc:id="a8be2ca8-5d8d-461a-88be-214347a70671" >
+			<when expression="#[(vars.exceptionResponse == null) and (vars.householdDBRecord.errorCode == null)]">
+				<ee:transform doc:name="Map to DB Columns" doc:id="ca1e5c87-c0dd-4715-9bef-c45c4a34de3e">
+			<ee:message>
+						<ee:set-payload resource="dwl/households-patch-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+			<try doc:name="Try" doc:id="fd8fc2be-ba7a-4eb1-8b46-2b90c2e25041" >
+			<db:stored-procedure doc:name="Call Households_Upsert" doc:id="c55ab0b7-d2d6-4301-a50d-d36416547117" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call Households_Upsert(:householdsRequestJSON,:householdId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+	householdsRequestJSON : write(payload, "application/json"),
+	householdId: vars.householdId
+}]]]></db:input-parameters>
+				<db:output-parameters >
+					<db:output-parameter key="householdId" type="NVARCHAR" />
+				</db:output-parameters>
+				</db:stored-procedure>
+			<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="680cd97b-0ab2-43f5-bc75-85d18c6684ba" doc:name="Map Response">
+			<ee:message>
+						<ee:set-payload resource="dwl/individuals-patch-message.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+if(payload.affectedRows==0) 400 else 200]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+					<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6c3998e6-ed5d-4342-bf39-6781fac3dd45" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<set-variable value="500" doc:name="httpStatus" doc:id="4a7da28f-9446-414d-a29c-be119c875b38" variableName="httpStatus" />
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="a307b3cf-2fb3-41d3-a927-bb087a12b209" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="f59c2a67-5001-4cf0-b149-d39961e3f845" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1235fab8-53bd-4986-ae57-72fcc55eb774" />
+				<set-variable value="404" doc:name="httpStatus" doc:id="ba47e2c5-3f54-4654-8d9e-e2307d89601f" variableName="httpStatus"/>
+				<flow-ref doc:name="common-error-handler_connector-exception" doc:id="1354a1f9-a7aa-401f-adff-4bd9869e2619" name="common-error-handler_connector-exception"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	
+	<sub-flow name="households_get-household" doc:id="ee8d4ed8-49ab-4c3e-9da8-ee51c9687a48" >
+		<logger level="INFO" doc:name="Log Request" doc:id="68cd4e4f-e157-4f13-b566-f03d3b40b502" message="#[attributes.queryParams]"/>
+		<try doc:name="Try" doc:id="727d5502-805a-4792-b662-45cb31277c65" >
+			<db:select doc:name="Select Households Party" doc:id="f3ff73fa-2043-456c-bf6b-a19e778e86a5" config-ref="mdm-db-config">
+			<db:sql><![CDATA[Select hh.ID,hh.PARTY_TYPE,hh.GLOBAL_PARTY,hh.NO_MERGE_REASON, hh.CREATED_BY,hh.CREATED_DATE,hh.NAME,hh.HOUSEHOLD_MEMBER_COUNT, hh.HOUSEHOLD_FORMED_DATE,hh.HOUSEHOLD_DISSOLVED_DATE,hh.UPDATED_BY,hh.UPDATED_DATE,
+p.ID PARTY_ID,eipj.EXTERNAL_ID EXTERNAL_ID_ID ,ei.EXTERNAL_ID EXTERNAL_ID,ei.EXTERNAL_ID_TYPE EXTERNAL_ID_TYPE,ei.STATUS STATUS,ei.STATUS_LAST_CHANGED_DATE STATUS_LAST_CHANGED_DATE , eit.ID EXTERNAL_ID_TYPE_ID, eit.NAME EXTERNAL_ID_TYPE_NAME
+from HOUSEHOLD hh, PARTY p,EXTERNAL_ID_PARTY_JOIN eipj,EXTERNAL_ID ei,EXTERNAL_ID_TYPE eit where hh.ID = :householdId and eipj.PARTY_ID =p.ID and ei.id = eipj.EXTERNAL_ID and  eit.ID = ei.EXTERNAL_ID_TYPE  ]]></db:sql>
+				<db:input-parameters ><![CDATA[#[householdId : vars.householdId]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5110f413-2837-4b49-b6f3-67c5654d0b02" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="901aced4-1009-49f1-a427-e6781b570f3f" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="8fc36434-136c-454f-ab80-226eae126169" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="ef1f748d-cce0-4bf1-afe6-e1cd89eac247">
+			<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="8d042c4e-1907-426e-9bc5-e2d562e5827b" message="Household Party not found" />
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1988cb28-eedc-42c1-b553-b57f5c8fc741">
+					<set-variable value="404" doc:name="httpStatus 404" doc:id="5fb774d7-334f-4651-a491-9e9b230381c5" variableName="httpStatus" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="partyId" doc:id="20aa344f-8f47-4290-bdf6-f87353893a89">
+					<ee:message>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="partyId"><![CDATA[%dw 2.0
+output application/java
+---
+vars.householdId]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+		<flow-ref doc:name="parties_get-externalIds" doc:id="e588a7e2-a5b7-4bb2-98c0-a12b487867dd" name="parties_get-externalids" target="householdsExternalIds" />
+		<ee:transform doc:name="Has Results" doc:id="7e2d8989-e8e1-419c-ad0f-407122cbba71">
+			<ee:message>
+						<ee:set-payload resource="dwl/households-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Return First Object" doc:id="c24ee50f-5282-4391-b6b7-1ccb5feff255">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="households_get-households-search" doc:id="462ba28a-8e2c-4940-bfe2-4ba1b61fe88c" >
+		<logger level="INFO" doc:name="Log Request" doc:id="af9da408-a55a-46e5-a183-dc41b1a76a76" message="#[attributes.queryParams]"/>
+		<ee:transform doc:name="Input Query Parameters" doc:id="ae73999e-7bda-44c5-b5f5-105d6a89497c" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="externalId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.externalId]]></ee:set-variable>
+				<ee:set-variable variableName="offset" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.offset default p('mdm.database.default-offset')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.limit default p('mdm.database.default-limit')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="householdId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.householdId]]></ee:set-variable>
+				<ee:set-variable variableName="outputDBRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Create Query based on Input Parameters" doc:id="5c0a5aa8-77bb-49e8-bc39-19a42ed93060" >
+			<ee:message >
+				<ee:set-payload resource="dwl/households-search-queries.dwl" />
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="36564f5f-889b-4dcc-9c4d-547c952d888e" >
+			<foreach doc:name="Execute All Queries in Sequence only if no results" doc:id="86275970-397d-4df8-81ab-a658e624ab2c" collection="#[payload]">
+				<choice doc:name="Check for Valid Query only if No Previous Results for previous query" doc:id="d7df1531-b1b5-4fcc-a441-c56659c8023f">
+				<when expression="#[payload != null and (sizeOf(vars.outputDBRecords) == 0)]">
+					<db:select doc:name="Select Parties on Input Params" doc:id="1074d1a3-f34c-4665-a098-35d2e2facd04" config-ref="mdm-db-config">
+			<db:sql><![CDATA[#[payload]]]></db:sql>
+		</db:select>
+						<ee:transform doc:name="Transform Message" doc:id="637fc744-0657-4673-8b6b-244c3d4413bc" >
+							<ee:message >
+							</ee:message>
+							<ee:variables >
+								<ee:set-variable resource="dwl/households-search-outputDBRecords.dwl" variableName="outputDBRecords" />
+							</ee:variables>
+						</ee:transform>
+				</when>
+					<otherwise>
+						<logger level="INFO" doc:name="No Records" doc:id="8792707f-4945-4b3f-b618-d47327abb35c" message="No Records"/>
+				</otherwise>
+			</choice>
+			</foreach>
+			<set-payload value="#[vars.outputDBRecords]" doc:name="Set outputDBRecords and Result" doc:id="1e6e93ad-4666-4c58-9908-53531c7b5448" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8ef885e3-330e-48af-a5bf-beca9484c38c" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="04e45dd3-674d-48a5-8630-3241d1060e84" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="d3fbbd81-9391-451d-ad98-a5e5ca55edaa" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="b9cb2e80-2b74-49fa-bd44-380c7830bea2">
+			<ee:message>
+						<ee:set-payload resource="dwl/households-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+	
+	
+	
+</mule>

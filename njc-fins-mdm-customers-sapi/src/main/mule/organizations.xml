@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="organizations_post-organizations" doc:id="fd466c7c-0a82-4ab5-bb83-d4e4d9121cbd" >
+		<ee:transform doc:name="Map to DB Columns" doc:id="7f3ea0ba-9766-4c3b-8a18-4ba11ba64075" >
+			<ee:message >
+				<ee:set-payload resource="dwl/organizations-post-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="dc9264a1-8d5a-46b5-9691-c37e00fd86ad" >
+			<db:stored-procedure doc:name="Call Organizations_Create" doc:id="1ed65b70-e1db-4551-83c6-5d63367cdaa0" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call Organizations_Create(:organizationRequestJSON,:organizationId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+	organizationRequestJSON : write(payload, "application/json")
+}]]]></db:input-parameters>
+				<db:output-parameters >
+					<db:output-parameter key="organizationId" type="NVARCHAR" />
+				</db:output-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="52833dd6-0165-46e1-b158-4f664ab4b5f4" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="15310b44-926c-4b03-a0e3-e4cff3f41dd8" name="common-error-handler_connector-exception"/>
+					<set-variable value="409" doc:name="httpStatus" doc:id="e8b9272f-a191-46ae-9a55-325ec2fa725f" variableName="httpStatus" />
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="dbdebc4b-a839-4da3-9bd3-711cac81f6d9" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="ae668616-cf37-41ed-9693-922cc34ae466" doc:name="Map Response">
+			<ee:message>
+				<ee:set-payload resource="dwl/organizations-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+201]]></ee:set-variable>
+						<ee:set-variable resource="dwl/organizations-create-response-headers.dwl" variableName="outboundHeaders" />
+			
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="organizations_patch-organization" doc:id="b3fef144-f5f3-47d2-8bd3-b8eb996342c7" >
+		<flow-ref doc:name="organizations_get-organization" doc:id="b1c91070-769a-4249-ab97-6fe99e1a17b4" name="organizations_get-organization" target="organizationDBRecord"/>
+		<choice doc:name="Choice" doc:id="a8be2ca8-5d8d-461a-88be-214347a70671" >
+			<when expression="#[(vars.exceptionResponse == null) and (vars.organizationDBRecord.errorCode == null)]">
+				<ee:transform doc:name="Map to DB Columns" doc:id="ca1e5c87-c0dd-4715-9bef-c45c4a34de3e">
+			<ee:message>
+						<ee:set-payload resource="dwl/organizations-patch-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+			<try doc:name="Try" doc:id="fd8fc2be-ba7a-4eb1-8b46-2b90c2e25041" >
+			<db:update doc:name="Update ORGANIZATION" doc:id="f1788851-7ff3-48de-b13d-60476f422ef6" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[update ORGANIZATION set GLOBAL_PARTY=:globalParty,PARTY_TYPE=:partyType,NAME=:name,NO_MERGE_REASON=:noMergeReason,LEGAL_NAME=:legalName,
+UPDATED_BY=:updatedBy,UPDATED_DATE=:updatedDate where ID =:id
+]]></db:sql>
+				<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+			</db:update>
+			<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="680cd97b-0ab2-43f5-bc75-85d18c6684ba" doc:name="Map Response">
+			<ee:message>
+						<ee:set-payload resource="dwl/organizations-patch-message.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+if(payload.affectedRows==0) 400 else 200]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+					<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6c3998e6-ed5d-4342-bf39-6781fac3dd45" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<set-variable value="500" doc:name="httpStatus" doc:id="4a7da28f-9446-414d-a29c-be119c875b38" variableName="httpStatus" />
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="a307b3cf-2fb3-41d3-a927-bb087a12b209" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="aa7501c6-6a1b-44d7-997b-b02f1080b0b0" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1235fab8-53bd-4986-ae57-72fcc55eb774" />
+				<set-variable value="404" doc:name="httpStatus" doc:id="ba47e2c5-3f54-4654-8d9e-e2307d89601f" variableName="httpStatus"/>
+				<flow-ref doc:name="common-error-handler_connector-exception" doc:id="1354a1f9-a7aa-401f-adff-4bd9869e2619" name="common-error-handler_connector-exception"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	
+	<sub-flow name="organizations_get-organization" doc:id="a202a34b-14b1-441c-b53f-fe6fd5872e11" >
+		<logger level="INFO" doc:name="Log Request" doc:id="7e96e326-59e8-477b-84a8-d9ee8c686a78" message="#[attributes.queryParams]"/>
+		<try doc:name="Try" doc:id="fb1971aa-7b14-4f95-a997-c8df1f460a46" >
+			<db:select doc:name="Select Organization Party" doc:id="30189d82-fce1-4564-b9b3-8a99c454b36c" config-ref="mdm-db-config">
+			<db:sql><![CDATA[Select 
+org.NAME,org.LEGAL_NAME,org.PARTY_TYPE,org.GLOBAL_PARTY,org.NO_MERGE_REASON,
+org.ID,p.ID PARTY_ID,org.CREATED_DATE,org.CREATED_BY,org.UPDATED_DATE,org.UPDATED_BY,eipj.EXTERNAL_ID EXTERNAL_ID_ID ,ei.EXTERNAL_ID EXTERNAL_ID,ei.EXTERNAL_ID_TYPE EXTERNAL_ID_TYPE,ei.STATUS STATUS,ei.STATUS_LAST_CHANGED_DATE STATUS_LAST_CHANGED_DATE , eit.ID EXTERNAL_ID_TYPE_ID, eit.NAME EXTERNAL_ID_TYPE_NAME
+from ORGANIZATION org, PARTY p,EXTERNAL_ID_PARTY_JOIN eipj,EXTERNAL_ID ei,EXTERNAL_ID_TYPE eit where org.ID = :organizationId and eipj.PARTY_ID =p.ID and ei.id = eipj.EXTERNAL_ID and  eit.ID = ei.EXTERNAL_ID_TYPE  
+]]></db:sql>
+				<db:input-parameters ><![CDATA[#[organizationId : vars.organizationId]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5dbcf914-b05c-4671-977c-060d9df1d586" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="549d4521-98fd-4a74-8f55-3d9360638cef" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="7e93f317-ccd0-45f7-9475-ed8c5e5d64c7" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="102d522f-d07f-4f3f-8489-91f152395b85">
+			<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="992b8113-9c23-407f-8ed4-0faf16e21b49" message="Organization Party not found" />
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3de4be22-3bb9-46ca-9e80-6c0c89ab2847">
+					<set-variable value="404" doc:name="httpStatus 404" doc:id="db030355-62a5-451b-9a90-1640ead9db43" variableName="httpStatus" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="partyId" doc:id="8e7c3431-7494-4cb0-99b3-a7efbb69ec53">
+					<ee:message>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="partyId"><![CDATA[%dw 2.0
+output application/java
+---
+vars.organizationId]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+		<flow-ref doc:name="parties_get-externalIds" doc:id="96feae42-dd51-492f-b71c-72c420f3edf9" name="parties_get-externalids" target="organizationsExternalIds" />
+		<ee:transform doc:name="Has Results" doc:id="3e926510-ec6c-4369-9c1f-5ad96078dc75">
+			<ee:message>
+						<ee:set-payload resource="dwl/organizations-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Return First Object" doc:id="39dec8d3-dcba-460a-b483-03a14b77aa5a">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="organizations_get-organizations-search" doc:id="a55211b2-13a1-471f-9256-f4b148eab2a1" >
+		<logger level="INFO" doc:name="Log Request" doc:id="e68eb143-a7f7-4c14-9cfc-4946128b7d86" message="#[attributes.queryParams]"/>
+		<ee:transform doc:name="Input Query Parameters" doc:id="c4f8942f-79ae-478a-a3e6-f7c948d5ed3f" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="externalId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.externalId]]></ee:set-variable>
+				<ee:set-variable variableName="emailAddress" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.emailAddress]]></ee:set-variable>
+				<ee:set-variable variableName="offset" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.offset default p('mdm.database.default-offset')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.limit default p('mdm.database.default-limit')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="organizationId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.organizationId]]></ee:set-variable>
+				<ee:set-variable variableName="outputDBRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Create Query based on Input Parameters" doc:id="d1b691c2-5253-426b-89cc-9eea561713f5" >
+			<ee:message >
+				<ee:set-payload resource="dwl/organizations-search-queries.dwl" />
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="bb44799a-58aa-4f0e-9e29-afccb5e0de99" >
+			<foreach doc:name="Execute All Queries in Sequence only if no results" doc:id="83410b0f-bb5d-431c-b822-e72763152431" collection="#[payload]">
+				<choice doc:name="Check for Valid Query only if No Previous Results for previous query" doc:id="423145d8-8049-4570-8739-15ed578626ad">
+				<when expression="#[payload != null and (sizeOf(vars.outputDBRecords) == 0)]">
+					<db:select doc:name="Select Parties on Input Params" doc:id="4c8f0442-b5d2-4071-b28e-e3f7f65653f7" config-ref="mdm-db-config">
+			<db:sql><![CDATA[#[payload]]]></db:sql>
+		</db:select>
+						<ee:transform doc:name="Transform Message" doc:id="96c31398-fa96-44af-89d4-3f8444be57bb" >
+							<ee:message >
+							</ee:message>
+							<ee:variables >
+								<ee:set-variable resource="dwl/organizations-search-outputDBRecords.dwl" variableName="outputDBRecords" />
+							</ee:variables>
+						</ee:transform>
+				</when>
+					<otherwise>
+						<logger level="INFO" doc:name="No Records" doc:id="d16522db-45ed-40a0-a0e7-dcd210a5bc77" message="No Records"/>
+				</otherwise>
+			</choice>
+			</foreach>
+			<set-payload value="#[vars.outputDBRecords]" doc:name="Set outputDBRecords and Result" doc:id="f34daaa9-7bbc-4c9d-bc2e-8aaed61b4cf9" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b971376e-f29b-4374-b745-834ce5d93993" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="bd2f38e0-c5b3-4e15-a9ff-3f56cd9cefba" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="c7f19afa-5285-433d-bde5-e97eda484d45" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="8380ccf3-4175-4882-8ad9-62daf08bed60">
+			<ee:message>
+						<ee:set-payload resource="dwl/organizations-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+	
+	
+	
+</mule>

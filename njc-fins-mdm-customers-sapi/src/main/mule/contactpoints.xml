@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	
+	
+	<sub-flow name="contactpoints_post-contactpoints" doc:id="456529f8-8e8a-4e5f-847a-cba98b6225e6" >
+		<try doc:name="Try" doc:id="8f929306-4da9-4d72-b616-a35d3f301a80" >
+			<validation:is-false doc:name="Check for primary ContactPoints Counts" doc:id="cf763105-e641-4e84-b5c3-d5d560fef2d2" expression='#[(sizeOf(payload[?($.contactPointType[0] == "ContactPointEmail")].primaryFlag default [] filter ($ == true)) &gt; 1) or (sizeOf(payload[?($.contactPointType[0] == "ContactPointPhone")].primaryFlag default []  filter ($ == true)) &gt; 1) or (sizeOf(payload[?($.contactPointType[0] == "ContactPointAddress")].primaryFlag default [] filter ($ == true)) &gt; 1)]' message='#["Cannot have primaryFlag set as true for more than one ContactPoint of each ContactPointType"]' />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="301c0c44-c10a-4ba1-a86b-c1c7bf28ad49" >
+					<set-variable value="400" doc:name="httpStatus" doc:id="167ea4b3-8174-4d4e-bc93-ea2ecd949654" variableName="httpStatus"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Map to Instance of ContactPoints" doc:id="8afb4fa0-c617-41af-bdf3-000e04e1506e" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dwl/contactpoints-contactpointphonerecords.dwl" variableName="contactPointPhoneRecords" />
+				<ee:set-variable resource="dwl/contactpoints-contactpointemailrecords.dwl" variableName="contactPointEmailRecords" />
+				<ee:set-variable resource="dwl/contactpoints-contactpointaddressrecords.dwl" variableName="contactPointAddressRecords" />
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Check if ContactPointAddress Exists" doc:id="cc9c5e08-6115-4571-9b8a-830426fdf426">
+			<when expression="#[sizeOf(vars.contactPointAddressRecords) &gt; 0]">
+				<set-payload value="#[vars.contactPointAddressRecords]" doc:name="contactPointAddressRecords" doc:id="3e3cc659-79fb-430c-8e4b-583ae5a44876" />
+				<try doc:name="Try" doc:id="026e1f3a-5120-4af4-931a-8bb6147d6462" >
+					<validation:is-empty-collection doc:name="Check ids are not null for ContactPointAddress" doc:id="86150609-b3dc-407c-9eda-4cdca79fc1f3" values="#[(payload.id filter $ != null)]" message='#["All id fields should be null to create ContactPoints of type ContactTypeAddress"]'/>
+					<flow-ref doc:name="contactpoints-upsert-address" doc:id="efe8f921-ae5a-4dc2-b5cf-1b9e66b13921" name="contactpoints_upsert-address" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="42960639-441b-4f13-8365-8ab44c59f374" >
+							<logger level="ERROR" doc:name="Log error" doc:id="8c940176-e80c-4f55-b031-5c5cb5571a12" message="Error in contactpoints-create-address. Continuing to process other child objects."/>
+							<set-variable value="#[output application/json --- (vars.errors default []) + (vars.exceptionResponse default error.description default error)]" doc:name="track errors" doc:id="dbfe977d-ca4f-4573-99dd-3ec55a3593d4" variableName="errors"/>
+							<set-variable value="#[null]" doc:name="clear exceptionResponse" doc:id="472c4eb2-7d6d-40f1-90f5-11c52d074e58" variableName="exceptionResponse"/>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="No Issues" doc:id="4aef2c83-df35-45c6-8fd9-4367720e2c0f" message="No Issues"/>
+			</otherwise>
+		</choice>
+		<choice doc:name="Check if ContactPointEmail Exists" doc:id="530d59db-7bac-4e38-be7a-3339dce1dd39" >
+			<when expression="#[sizeOf(vars.contactPointEmailRecords) &gt; 0]">
+				<set-payload value="#[vars.contactPointEmailRecords]" doc:name="contactPointEmailRecords" doc:id="8c714a2f-6881-4ac0-b4a2-23834b6237cc" />
+				<try doc:name="Try" doc:id="32b401cb-5400-4059-b622-e9635fd20232" >
+					<validation:is-empty-collection doc:name="Check ids are not null for ContactPointEmails" doc:id="25eb293b-45aa-4b5d-bf39-0d63b5d38d3d" message='#["All id fields should be null to create ContactPoints of type ContactTypeEmail"]' values="#[(payload.id filter $ != null)]"/>
+					<flow-ref doc:name="contactpoints_upsert-email" doc:id="7c2e00ba-fac6-49d6-a404-9337a0099c82" name="contactpoints_upsert-email" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="5b585950-c6aa-4861-8605-bf9d81782e5a" >
+							<logger level="ERROR" doc:name="Log error" doc:id="e1b9a67c-1c79-494c-b8d2-346daa8435b7" message="Error in contactpoints_create-email. Continuing to process other child objects." />
+							<set-variable value="#[output application/json --- (vars.errors default []) + (vars.exceptionResponse default error.description default error)]" doc:name="track errors" doc:id="4dc7fa18-df6f-4fb5-9e2e-454944614a2a" variableName="errors" />
+							<set-variable value="#[null]" doc:name="clear exceptionResponse" doc:id="3bca5538-808f-4e23-9627-a86b0cb51adc" variableName="exceptionResponse" />
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="No Issues" doc:id="b1b8f5e2-0610-4b03-acf9-24900da40ccc" message="No Issues"/>
+			</otherwise>
+		</choice>
+		<choice doc:name="Check if ContactPointPhone Exists" doc:id="01d92e7a-ad14-47eb-882f-72ab1fa791d0" >
+			<when expression="#[sizeOf(vars.contactPointPhoneRecords) &gt; 0]">
+				<set-payload value="#[vars.contactPointPhoneRecords]" doc:name="contactPointPhoneRecords" doc:id="0a1401ac-51a7-4123-91e6-92a11a5364c3" />
+				<try doc:name="Try" doc:id="10a7e088-6513-4163-878e-edd556dd0265" >
+					<validation:is-empty-collection doc:name="Check ids are not null for ContactPointPhones" doc:id="1aba44d9-6839-4148-9454-db352673db0f" values="#[(payload.id filter $ != null)]" message='#["All id fields should be null to create ContactPoints of type ContactTypePhone"]'/>
+					<flow-ref doc:name="contactpoints_upsert-phone" doc:id="bc0e40d5-c458-4cd6-94ee-87dee70c1329" name="contactpoints_upsert-phone" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ba6235d0-113d-4a54-8c72-870bf145879e" >
+							<logger level="ERROR" doc:name="Log error" doc:id="446a1be3-ac06-4b36-9cc7-b53af138e509" message="Error in contactpoints_create-phone. Continuing to process other child objects." />
+							<set-variable value="#[output application/json --- (vars.errors default []) + (vars.exceptionResponse default error.description default error)]" doc:name="track errors" doc:id="85dfb394-0fe1-4347-8cf5-2be72f141a30" variableName="errors" />
+							<set-variable value="#[null]" doc:name="clear exceptionResponse" doc:id="d94a23ef-0128-4860-b217-7a926e7bd51f" variableName="exceptionResponse" />
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="No Issues" doc:id="40f8eb76-aa48-4ec5-8cb0-f3f323f1e803" message="No Issues"/>
+			</otherwise>
+		</choice>
+		<try doc:name="Try" doc:id="5fba0886-0b2c-4c0c-8576-d213a8c8fa99" >
+			<validation:is-true doc:name="No errors" doc:id="62e8a67e-f605-46b3-9b3c-8b6960957946" expression="#[isEmpty(vars.errors)]" message="Errors occurred while creating child objects" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fb5da675-eed8-469a-ba2f-c6c1c86e666d" >
+					<set-variable value="409" doc:name="httpStatus 409" doc:id="0a9ed4b8-590b-4c9c-b696-3952bd9712dc" variableName="httpStatus" />
+					<set-variable value="#[vars.errors]" doc:name="exceptionResponse" doc:id="0a4f304a-1179-436f-bf78-d46d2c7c30a9" variableName="exceptionResponse"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="b6600e4d-0a8d-468a-afa2-f8f1758ea5d3" doc:name="Map Response">
+			<ee:message>
+				<ee:set-payload resource="dwl/individuals-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+201]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+	
+	
+	
+	<sub-flow name="contactpoints_put-contactpoints" doc:id="a453785e-9c77-41c0-b1da-e3ce9bb24430" >
+		<try doc:name="Try" doc:id="9a648964-41b3-46f8-8ed1-21d1f6f21329" >
+			<validation:is-false doc:name="Check for primary ContactPoints Counts" doc:id="a4619119-6df6-4871-808f-1c1441b11a97" expression='#[(sizeOf(payload[?($.contactPointType[0] == "ContactPointEmail")].primaryFlag default [] filter ($ == true)) &gt; 1) or (sizeOf(payload[?($.contactPointType[0] == "ContactPointPhone")].primaryFlag default []  filter ($ == true)) &gt; 1) or (sizeOf(payload[?($.contactPointType[0] == "ContactPointAddress")].primaryFlag default [] filter ($ == true)) &gt; 1)]' message='#["Cannot have primaryFlag set as true for more than one ContactPoint of each ContactPointType"]' />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="467fb396-5dd9-49f0-992a-8500e45e6916" >
+					<set-variable value="400" doc:name="httpStatus" doc:id="530e664e-771e-49d4-a5f5-e79fb60a76fd" variableName="httpStatus"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		
+		<ee:transform doc:name="Map to Instance of ContactPoints" doc:id="524e6797-b06b-41ce-9b38-a3cc036726b6" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dwl/contactpoints-contactpointphonerecords.dwl" variableName="contactPointPhoneRecords" />
+				<ee:set-variable resource="dwl/contactpoints-contactpointemailrecords.dwl" variableName="contactPointEmailRecords" />
+				<ee:set-variable resource="dwl/contactpoints-contactpointaddressrecords.dwl" variableName="contactPointAddressRecords" />
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Check if ContactPointAddress Exists" doc:id="8b97ffe2-214f-49a6-94ab-d759eccee35d">
+			<when expression="#[sizeOf(vars.contactPointAddressRecords) &gt; 0]">
+				<set-payload value="#[vars.contactPointAddressRecords]" doc:name="contactPointAddressRecords" doc:id="055996cf-bab3-4b7b-8ce8-a9c60cf9adc2" />
+				<try doc:name="Try" doc:id="ae0041ca-79b1-416f-b40b-5e1a7f952581" >
+					<flow-ref doc:name="contactpoints_upsert-address" doc:id="c5cd20b3-2d1c-46b7-b02f-975cc2a03413" name="contactpoints_upsert-address" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="cdc0acfb-e3a3-4a71-b144-9db8cd72ef79" >
+							<logger level="ERROR" doc:name="Log error" doc:id="5067e860-c15a-4679-98f8-d3e6afb0967a" message="Error in contactpoints-update-address. Continuing to process other child objects." />
+							<set-variable value="#[output application/json --- (vars.errors default []) + (vars.exceptionResponse default error.description default error)]" doc:name="track errors" doc:id="6f59feab-7cf7-4236-b02b-a156fcd5781e" variableName="errors" />
+							<set-variable value="#[null]" doc:name="clear exceptionResponse" doc:id="0d866d4d-e971-4abe-8bf3-179b74c05095" variableName="exceptionResponse" />
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="No Issues" doc:id="c070617d-26cf-4471-a41e-c4da31825a11" message="No Issues"/>
+			</otherwise>
+		</choice>
+		<choice doc:name="Check if ContactPointEmail Exists" doc:id="13540caa-65bf-4cef-a7c5-c2b4f16f983e" >
+			<when expression="#[sizeOf(vars.contactPointEmailRecords) &gt; 0]">
+				<set-payload value="#[vars.contactPointEmailRecords]" doc:name="contactPointEmailRecords" doc:id="f763e5f3-5287-4d84-a04c-15c4c32ae658" />
+				<try doc:name="Try" doc:id="3eee09b7-3564-4556-87ea-0186a278a977" >
+					<flow-ref doc:name="contactpoints_upsert-email" doc:id="78b15982-e175-4efa-96ae-8e059890e780" name="contactpoints_upsert-email" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="674f240f-9c39-479b-b89b-f86bf86727ed" >
+							<logger level="ERROR" doc:name="Log error" doc:id="061ad133-83b7-4d6d-b4ab-ac53e255febc" message="Error in contactpoints_update-email. Continuing to process other child objects." />
+							<set-variable value="#[output application/json --- (vars.errors default []) + (vars.exceptionResponse default error.description default error)]" doc:name="track errors" doc:id="32bca99f-7c00-4040-bc10-0928195ae30e" variableName="errors" />
+							<set-variable value="#[null]" doc:name="clear exceptionResponse" doc:id="37cf4026-525f-4ee3-9c77-0ee839983952" variableName="exceptionResponse" />
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="No Issues" doc:id="8175f43f-c02b-4bd8-9029-31c55753ac1c" message="No Issues"/>
+			</otherwise>
+		</choice>
+		<choice doc:name="Check if ContactPointPhone Exists" doc:id="31d2bb71-2a8c-4027-b3d2-caf1b53c8ac3" >
+			<when expression="#[sizeOf(vars.contactPointPhoneRecords) &gt; 0]">
+				<set-payload value="#[vars.contactPointPhoneRecords]" doc:name="contactPointPhoneRecords" doc:id="f9b4f2af-ea3a-4260-bb05-60cb4529ae8e" />
+				<try doc:name="Try" doc:id="9d7f4649-cd48-4c3b-ab4e-9a74a40cfeaf" >
+					<flow-ref doc:name="contactpoints_upsert-phone" doc:id="d0c63ae7-08d6-4570-bc63-9de8c2f4c3ec" name="contactpoints_upsert-phone" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="8c51879e-bdca-4855-a951-b2b483f57ecb" >
+							<logger level="ERROR" doc:name="Log error" doc:id="76407f0f-7b7c-4bda-a53e-9dcf498a917d" message="Error in contactpoints_update-phone. Continuing to process other child objects." />
+							<set-variable value="#[output application/json --- (vars.errors default []) + (vars.exceptionResponse default error.description default error)]" doc:name="track errors" doc:id="18055a0a-c615-42c0-9af2-b31a80dbd68a" variableName="errors" />
+							<set-variable value="#[null]" doc:name="clear exceptionResponse" doc:id="4c01374f-889d-46c1-9be5-6c3ee5b858f9" variableName="exceptionResponse" />
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="No Issues" doc:id="6d577eb3-7d2b-41e2-ac79-f05df8d6617a" message="No Issues"/>
+			</otherwise>
+		</choice>
+		<try doc:name="Try" doc:id="26414f36-7ae3-4a28-a7e4-4b9caf5ab264">
+			<validation:is-true doc:name="No errors" doc:id="0ce9c349-848a-42d4-a1be-e246a81caa2d" expression="#[isEmpty(vars.errors)]" message="Errors occurred while creating child objects" />
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2e45d457-3375-42a8-8af8-3ca031234474">
+					<set-variable value="409" doc:name="httpStatus 409" doc:id="efe7d46f-2d4e-4e76-bc08-5471e4d19b6d" variableName="httpStatus" />
+					<set-variable value="#[vars.errors]" doc:name="exceptionResponse" doc:id="6217f404-f2ca-4091-8f60-dd24afa2e44a" variableName="exceptionResponse" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="13af3285-61ce-41d2-bea8-8c6f856d8222" doc:name="Map Response">
+			<ee:message>
+				<ee:set-payload resource="dwl/individuals-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+200]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+
+	
+	<sub-flow name="contactpoints_get-contactpoints" doc:id="31f2ed3c-44d3-41aa-a93f-9128e8b8c6e9" >
+		<logger level="INFO" doc:name="Log Request" doc:id="57e404f2-c95d-4e45-9fe7-1943c0c6f7f5" message="#[attributes.queryParams]"/>
+		<try doc:name="Try" doc:id="55f6edca-ea68-4ba9-889d-2b83cab5c5b8" >
+			<db:select doc:name="Select ContactPointPhone" doc:id="62780201-a6b0-472f-9723-e2a6b5b45154" config-ref="mdm-db-config" target="contactPointPhoneDBRecords">
+			<db:sql><![CDATA[select cpp.ID,cpp.Name CONTACT_POINT_PHONE_NAME,cpp.ACTIVE_FROM_DATE,cpp.ACTIVE_TO_DATE,cpp.AREA_CODE,cpp.BEST_TIME_TO_CONTACT_END_TIME,cpp.BEST_TIME_TO_CONTACT_START_TIME,cpp.COUNTRY_NAME,cpp.CREATED_BY,cpp.CREATED_DATE,cpp.EXTENSION_NUMBER,
+cpp.FOR_BUSINESS_USE,cpp.FORMATTED_E164_PHONE_NUMBER,cpp.FORMATTED_INTERNATIONAL_PHONE_NUMBER,cpp.FORMATTED_NATIONAL_PHONE_NUMBER,cpp.FOR_PERSONAL_USE,cpp.IS_FAX_CAPABLE,cpp.IS_SM_SCAPABLE,cpp.PHONE_COUNTRY_CODE,
+cpp.PRIMARY_FLAG,cpp.PRIMARY_PHONE_TYPE,cpp.PROFILE_FIRST_CREATED_DATE,cpp.PROFILE_LAST_UPDATED_DATE,cpp.PROFILE_OCCURRENCE_COUNT,cpp.SHORT_CODE,cpp.TELEPHONE_NUMBER,cpp.UPDATED_BY,cpp.UPDATED_DATE,cppj.CONTACT_POINT_ID ,cppj.PARTY_ID 
+from CONTACT_POINT_PHONE cpp,CONTACT_POINT_PARTY_JOIN cppj  where cppj.PARTY_ID = :partyId and cpp.ID = cppj.CONTACT_POINT_ID;]]></db:sql>
+				<db:input-parameters ><![CDATA[#[partyId : vars.partyId]]]></db:input-parameters>
+		</db:select>
+			<choice doc:name="Choice" doc:id="ccf55c29-b072-48a4-849e-74926fe21696" >
+				<when expression="#[sizeOf(vars.contactPointPhoneDBRecords) &gt; 0]">
+					<ee:transform doc:name="Set InClause Param" doc:id="bbc7d7b9-639f-4265-bba2-117b4e900130">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="inClause"><![CDATA[%dw 2.0
+output application/java
+---
+vars.contactPointPhoneDBRecords.CONTACT_POINT_ID map ":arg$$" reduce ((item, accumulator) -> accumulator ++ ", " ++ item)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+					<ee:transform doc:name="Set Input Param" doc:id="74767bc7-07ae-4d60-9b23-46de7bb025f8">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="inputParam"><![CDATA[%dw 2.0
+output application/java
+---
+vars.contactPointPhoneDBRecords.CONTACT_POINT_ID  map {"arg$$" : $} reduce ((item, accumulator = {}) -> item ++ accumulator)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+					<flow-ref doc:name="contacts_get-phone-externalids" doc:id="f9543c0f-6f4f-4336-ba49-5687bea4c0e2" name="contacts_get-externalids" target="externalIdPhone" />
+				</when>
+			</choice>
+			
+			 <db:select doc:name="Select ContactPointAddress" doc:id="424e5b6b-9b6b-4880-b3d0-2aa1e8adef8a" config-ref="mdm-db-config" target="contactPointAddressDBRecords">
+				<db:sql><![CDATA[select cpa.ID,cpa.Name CONTACT_POINT_ADDRESS_NAME,cpa.ACTIVE_FROM_DATE,cpa.ACTIVE_TO_DATE,cpa.ADDRESS_LINE1,cpa.ADDRESS_LINE2,cpa.ADDRESS_LINE3,cpa.ADDRESS_LINE4,cpa.BEST_TIME_TO_CONTACT_END_TIME,cpa.BEST_TIME_TO_CONTACT_START_TIME,
+cpa.CITY_NAME,cpa.COUNTRY_NAME,cpa.CREATED_BY,cpa.CREATED_DATE,cpa.FOR_BUSINESS_USE,cpa.FOR_PERSONAL_USE,cpa.GEO_ACCURACY,cpa.GEO_LATITUDE,cpa.GEO_LONGITUDE,cpa.IS_USED_FOR_BILLING,cpa.IS_USED_FOR_SHIPPING,
+cpa.POSTAL_CODE_TEXT,cpa.PRIMARY_FLAG,cpa.PROFILE_FIRST_CREATED_DATE,cpa.PROFILE_LAST_UPDATED_DATE,cpa.PROFILE_OCCURRENCE_COUNT,cpa.STATE_PROVINCE_NAME,cpa.UPDATED_BY,
+cpa.UPDATED_DATE,cppj.CONTACT_POINT_ID,cppj.PARTY_ID  from CONTACT_POINT_ADDRESS cpa,CONTACT_POINT_PARTY_JOIN cppj  where cppj.PARTY_ID = :partyId and cpa.ID = cppj.CONTACT_POINT_ID;]]></db:sql>
+				<db:input-parameters><![CDATA[#[partyId : vars.partyId]]]></db:input-parameters>
+			</db:select>
+			<choice doc:name="Choice" doc:id="b1193747-650f-4309-ad15-02c53fc078b1" >
+				<when expression="#[sizeOf(vars.contactPointAddressDBRecords) &gt; 0]">
+					<ee:transform doc:name="Set InClause Param" doc:id="99107cde-0dd2-4af4-af48-78db03767851">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="inClause"><![CDATA[%dw 2.0
+output application/java
+---
+vars.contactPointAddressDBRecords.CONTACT_POINT_ID map ":arg$$" reduce ((item, accumulator) -> accumulator ++ ", " ++ item)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+					<ee:transform doc:name="Set Input Param" doc:id="2ba009ab-b8d0-4596-8218-5397998b4d01">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="inputParam"><![CDATA[%dw 2.0
+output application/java
+---
+vars.contactPointAddressDBRecords.CONTACT_POINT_ID  map {"arg$$" : $} reduce ((item, accumulator = {}) -> item ++ accumulator)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+					<flow-ref doc:name="contacts_get-address-externalids" doc:id="f3bc755e-05f0-4bfc-be78-c461e2312588" name="contacts_get-externalids" target="externalIdAddress" />
+				</when>
+			</choice>
+			<db:select doc:name="Select ContactPointEmail" doc:id="c37f7af6-8691-4534-8e4d-ecefef7d29c1" config-ref="mdm-db-config" target="contactPointEmailDBRecords">
+				<db:sql ><![CDATA[select cpe.ID,cpe.Name CONTACT_POINT_EMAILADDRESS_NAME,cpe.ACTIVE_FROM_DATE,cpe.ACTIVE_TO_DATE,cpe.BEST_TIME_TO_CONTACT_END_TIME,cpe.BEST_TIME_TO_CONTACT_START_TIME,cpe.CREATED_BY,cpe.CREATED_DATE,cpe.EMAIL_ADDRESS,cpe.EMAIL_LATEST_BOUNCE_REASON_TEXT,cpe.EMAIL_DOMAIN,
+cpe.EMAIL_LATEST_BOUNCE_DATE_TIME,cpe.EMAIL_MAIL_BOX,cpe.FOR_BUSINESS_USE,cpe.FOR_PERSONAL_USE,cpe.PRIMARY_FLAG,cpe.PROFILE_FIRST_CREATED_DATE,cpe.PROFILE_LAST_UPDATED_DATE,cpe.PROFILE_OCCURRENCE_COUNT,cpe.UPDATED_BY,
+cpe.UPDATED_DATE,cppj.CONTACT_POINT_ID,cppj.PARTY_ID from CONTACT_POINT_EMAIL cpe,CONTACT_POINT_PARTY_JOIN cppj  where cppj.PARTY_ID = :partyId and cpe.ID = cppj.CONTACT_POINT_ID;]]></db:sql>
+				<db:input-parameters ><![CDATA[#[partyId : vars.partyId]]]></db:input-parameters>
+			</db:select>
+			<choice doc:name="Choice" doc:id="69ad3f32-2f5f-4e4b-840e-18a6e0b56651" >
+				<when expression="#[sizeOf(vars.contactPointEmailDBRecords) &gt; 0]">
+					<ee:transform doc:name="Set InClause Param" doc:id="d946b40b-1d3a-4e20-81ab-b8f72f0d6489">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="inClause"><![CDATA[%dw 2.0
+output application/java
+---
+vars.contactPointEmailDBRecords.CONTACT_POINT_ID map ":arg$$" reduce ((item, accumulator) -> accumulator ++ ", " ++ item)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+					<ee:transform doc:name="Set Input Param" doc:id="4b651d1b-79e2-407c-b465-eb64fe7cc191">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="inputParam"><![CDATA[%dw 2.0
+output application/java
+---
+vars.contactPointEmailDBRecords.CONTACT_POINT_ID  map {"arg$$" : $} reduce ((item, accumulator = {}) -> item ++ accumulator)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+					<flow-ref doc:name="contacts_get-email-externalids" doc:id="b128ded6-0d64-4f0f-9b3a-1173cb2a40dc" name="contacts_get-externalids" target="externalIdEmail" />
+				</when>
+			</choice>
+			<ee:transform doc:name="DB to JSON" doc:id="354be764-3f7b-436c-a1a0-688b5896f0bd" >
+				<ee:message >
+					<ee:set-payload resource="dwl/contactpoints-get-response.dwl" />
+				</ee:message>
+			</ee:transform>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b8cf9bf5-1430-4d13-9e75-7186fa978b95" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="e28818ac-26d6-4242-a865-04a40968d1b7" name="common-error-handler_connector-exception"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="No Issues" doc:id="5cc7ef5e-64a6-46fd-a4b3-f70f0b119d2a" message="No Issues" />
+	</sub-flow>	
+	<sub-flow name="contactpoints_upsert-address" doc:id="f2dc4f52-08ae-436f-8ac6-049603dc7020" >
+		<ee:transform doc:name="Transform to StoredProcedure-JSON" doc:id="09615211-0b98-489c-a2ce-8902b321eb8e">
+			<ee:message>
+				<ee:set-payload resource="dwl/contactpointsaddress-storedprocedure-request.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="834a3be5-7146-4058-b46f-fb82c90f0312" >
+			<db:stored-procedure doc:name="Call ContactPointAddress_Upsert" doc:id="55d82cf4-f8b3-49ff-9453-a3930cfdc187" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call ContactPointAddress_Upsert(:queryParams,:partyId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{ 
+	queryParams : write(payload, "application/json"),
+	partyId : vars.partyId
+	
+}]]]></db:input-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2807f7e4-48ca-4234-a6d0-b67e4869558d" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="42064622-bdc5-426b-a3df-6844dbb3ab77" name="common-error-handler_connector-exception"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="No Issues" doc:id="be806db5-ce00-4d71-af3b-e64a40db237b" message="No Issues" />
+	</sub-flow>	
+	<sub-flow name="contactpoints_upsert-email" doc:id="1ba54eec-9c40-4daa-ad11-9c07ddb905f5" >
+		<ee:transform doc:name="Transform to StoredProcedure-JSON" doc:id="bc11d168-b307-42f6-bf1c-3a7661714440">
+			<ee:message>
+				<ee:set-payload resource="dwl/contactpointsemail-storedprocedure-request.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="58a6916b-b785-4c71-8433-7669ae58f6c5" >
+			<db:stored-procedure doc:name="Call ContactPointEmail_Upsert" doc:id="4acc321b-989b-4465-8e87-8a1ff8f4faf1" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call ContactPointEmail_Upsert(:queryParams,:partyId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{ 
+	queryParams : write(payload, "application/json"),
+	partyId : vars.partyId
+	
+}]]]></db:input-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="0c76ac2c-907f-40bf-8ee2-87fd71282eb9" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="0db3d05d-d41c-4663-a01e-8f256ee1fc0f" name="common-error-handler_connector-exception"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>	
+	<sub-flow name="contactpoints_upsert-phone" doc:id="2dd11145-7162-4d3c-8aeb-f737fca4a456" >
+		<ee:transform doc:name="Transform to StoredProcedure-JSON" doc:id="dd3b73b2-7e21-4bf7-b04f-509ee4777c82">
+			<ee:message>
+				<ee:set-payload resource="dwl/contactpointsphone-storedprocedure-request.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="33b2d56b-354a-44b4-8e4c-2342ed4630a2" >
+			<db:stored-procedure doc:name="Call ContactPointPhone_Upsert" doc:id="b7ad7c21-d4ce-41cd-ace2-11fa85220c2a" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call ContactPointPhone_Upsert(:queryParams,:partyId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{ 
+	queryParams : write(payload, "application/json"),
+	partyId : vars.partyId
+	
+}]]]></db:input-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="74e041ef-9655-49db-9a3a-7162eda3ca2b" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="88cb768b-2cf5-412e-9963-58a68e1bfef5" name="common-error-handler_connector-exception"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="No Issues" doc:id="adc8d0b6-1fd3-40bd-bb6b-0870befee02f" message="No Issues" />
+	</sub-flow>
+	<sub-flow name="contacts_get-externalids" doc:id="0aea172c-87a1-462d-9081-0f230e13886d" >
+		<try doc:name="Try" doc:id="43a55211-e596-4f71-8a84-e8a9e240a9b8" >
+			<db:select doc:name="Select External Ids" doc:id="424c7417-4bda-4ecf-8826-7b91cba015aa" config-ref="mdm-db-config">
+			<db:sql><![CDATA[#['Select ei.ID ID,eicpj.CONTACT_POINT_ID,eicpj.EXTERNAL_ID EXTERNAL_ID_ID,ei.EXTERNAL_ID EXTERNAL_ID,ei.EXTERNAL_ID_TYPE EXTERNAL_ID_TYPE,ei.STATUS STATUS,ei.STATUS_LAST_CHANGED_DATE STATUS_LAST_CHANGED_DATE , eit.ID EXTERNAL_ID_TYPE_ID, eit.NAME EXTERNAL_ID_TYPE_NAME
+from EXTERNAL_ID_CONTACT_POINT_JOIN eicpj,
+EXTERNAL_ID ei,
+EXTERNAL_ID_TYPE eit
+where ei.id = eicpj.EXTERNAL_ID and  eit.ID = ei.EXTERNAL_ID_TYPE and eicpj.CONTACT_POINT_ID in ($(vars.inClause))']]]></db:sql>
+				<db:input-parameters ><![CDATA[#[vars.inputParam]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="84de6a81-f01d-47c8-91ec-b02ef74eff08" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="9ece19e8-3774-4af2-9234-6c0d1ab51c26" name="common-error-handler_connector-exception"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="7ffefcb1-9359-48d3-8105-af69262e55bf">
+			<ee:message>
+				<ee:set-payload resource="dwl/get-contactpoints-externalids-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>	
+	
+	
+	</mule>

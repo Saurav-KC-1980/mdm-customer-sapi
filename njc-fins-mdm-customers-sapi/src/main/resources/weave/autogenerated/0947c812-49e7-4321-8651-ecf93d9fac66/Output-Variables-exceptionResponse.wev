@@ -1,0 +1,10 @@
+%dw 2.0
+
+type auto_0947c812_49e7_4321_8651_ecf93d9fac66_Output_Variables_exceptionResponse = {|
+  errorCode: String, 
+  errorMessage: String, 
+  transactionId: String, 
+  timeStamp: DateTime, 
+  causedBy: Null
+|}
+

@@ -1,0 +1,7 @@
+%dw 2.0
+
+type auto_0947c812_49e7_4321_8651_ecf93d9fac66_Input_Payload = Array<{  statusLastChangedDate?: String | Null,   externalId: String,   id: String | Null,   externalIdType: Array<String | {    name: String,     id: String | Null,     _?: Any  } {"description": "Identifies the external system that owns or otherwise recognizes a particular identifier"}> {"description": "Identifies the system that owns or otherwise recognizes this unique identifier"}, 
+  status?: "VALID" | "INVALID", 
+  _?: Any
+} {"description": "Defines a structure for referencing an entity in external systems"}>
+

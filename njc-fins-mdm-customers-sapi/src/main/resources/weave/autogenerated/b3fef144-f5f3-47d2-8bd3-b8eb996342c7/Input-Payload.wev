@@ -1,0 +1,68 @@
+%dw 2.0
+
+type auto_b3fef144_f5f3_47d2_8bd3_b8eb996342c7_Input_Payload = {
+  totalContractedAmount?: Number | Null, 
+  totalLifeTimeValue?: Number | Null, 
+  marketingEmailResponseRate?: Number | Null, 
+  last24MonthsNewRevenueAmount?: Number | Null, 
+  originatingCustomerSource?: String, 
+  partyRoleType: String, 
+  externalIds?: Array<String | {    statusLastChangedDate?: String | Null,     externalId: String,     id: String | Null,     externalIdType: Array<String | {      name: String,       id: String | Null,       _?: Any    } {"description": "Identifies the external system that owns or otherwise recognizes a particular identifier"}> {"description": "Identifies the system that owns or otherwise recognizes this unique identifier"}, 
+    status?: "VALID" | "INVALID", 
+    _?: Any
+  } {"description": "Defines a structure for referencing an entity in external systems"}>, 
+  customerSatisfactionScore?: Number | Null, 
+  last12MonthsNewRevenueAmount?: Number | Null, 
+  customerNumber?: String, 
+  last12MonthsSupportCallCount?: Number | Null, 
+  prospectRating?: String, 
+  netPromoterScore?: Number | Null, 
+  totalProfitContributionAmount?: Number | Null, 
+  customerStatus: String, 
+  auditInfo?: {
+    createdDate: String | Null, 
+    updatedBy: String, 
+    isDeleted: Boolean | Null, 
+    createdBy: String, 
+    updatedDate: String | Null, 
+    _?: Any
+  } {"description": "Defines standard system audit fields available for most types"}, 
+  id: String | Null, 
+  totalBookingsAmount?: Number | Null, 
+  party?: Array<String | {    auditInfo?: {      createdDate: String | Null,       updatedBy: String,       isDeleted: Boolean | Null,       createdBy: String,       updatedDate: String | Null,       _?: Any    } {"description": "Defines standard system audit fields available for most types"},     noMergeReason?: String,     contactPoints?: Array<String | {      activeFromDate: String,       profileFirstCreatedDate?: String | Null,       activeToDate?: String | Null,       forBusinessUse?: Boolean | Null,       bestTimeToContactStartTime?: String | Null,       profileLastUpdatedDate?: String | Null,       externalIds?: Array<String | {        statusLastChangedDate?: String | Null,         externalId: String,         id: String | Null,         externalIdType: Array<String | {          name: String,           id: String | Null,           _?: Any        } {"description": "Identifies the external system that owns or otherwise recognizes a particular identifier"}> {"description": "Identifies the system that owns or otherwise recognizes this unique identifier"}, 
+        status?: "VALID" | "INVALID", 
+        _?: Any
+      } {"description": "Defines a structure for referencing an entity in external systems"}>, 
+      primaryFlag?: Boolean | Null, 
+      bestTimeToContactEndTime?: String | Null, 
+      auditInfo?: {
+        createdDate: String | Null, 
+        updatedBy: String, 
+        isDeleted: Boolean | Null, 
+        createdBy: String, 
+        updatedDate: String | Null, 
+        _?: Any
+      } {"description": "Defines standard system audit fields available for most types"}, 
+      profileOccurrenceCount?: Number | Null, 
+      forPersonalUse?: Boolean | Null, 
+      partyRole?: Array<String>, 
+      name?: String, 
+      contactPointType: Array<String | {        auditInfo?: {          createdDate: String | Null,           updatedBy: String,           isDeleted: Boolean | Null,           createdBy: String,           updatedDate: String | Null,           _?: Any        } {"description": "Defines standard system audit fields available for most types"},         name: String,         optInPriority?: Number | Null,         id: String | Null,         _?: Any      }>, 
+      id: String | Null, 
+      party?: Array<String>, 
+      _?: Any
+    }>, 
+    globalParty?: String, 
+    externalIds?: Array<String | {      statusLastChangedDate?: String | Null,       externalId: String,       id: String | Null,       externalIdType: Array<String | {        name: String,         id: String | Null,         _?: Any      } {"description": "Identifies the external system that owns or otherwise recognizes a particular identifier"}> {"description": "Identifies the system that owns or otherwise recognizes this unique identifier"}, 
+      status?: "VALID" | "INVALID", 
+      _?: Any
+    } {"description": "Defines a structure for referencing an entity in external systems"}>, 
+    id: String | Null, 
+    partyType: String, 
+    primaryAccount?: Array<String>, 
+    _?: Any
+  }>, 
+  churnScore?: Number | Null, 
+  _?: Any
+}
+

@@ -1,0 +1,26 @@
+%dw 2.0
+
+type auto_a453785e_9c77_41c0_b1da_e3ce9bb24430_Input_Payload = Array<{  activeFromDate: String,   profileFirstCreatedDate?: String | Null,   activeToDate?: String | Null,   forBusinessUse?: Boolean | Null,   bestTimeToContactStartTime?: String | Null,   profileLastUpdatedDate?: String | Null,   externalIds?: Array<String | {    statusLastChangedDate?: String | Null,     externalId: String,     id: String | Null,     externalIdType: Array<String | {      name: String,       id: String | Null,       _?: Any    } {"description": "Identifies the external system that owns or otherwise recognizes a particular identifier"}> {"description": "Identifies the system that owns or otherwise recognizes this unique identifier"}, 
+    status?: "VALID" | "INVALID", 
+    _?: Any
+  } {"description": "Defines a structure for referencing an entity in external systems"}>, 
+  primaryFlag?: Boolean | Null, 
+  bestTimeToContactEndTime?: String | Null, 
+  auditInfo?: {
+    createdDate: String | Null, 
+    updatedBy: String, 
+    isDeleted: Boolean | Null, 
+    createdBy: String, 
+    updatedDate: String | Null, 
+    _?: Any
+  } {"description": "Defines standard system audit fields available for most types"}, 
+  profileOccurrenceCount?: Number | Null, 
+  forPersonalUse?: Boolean | Null, 
+  partyRole?: Array<String>, 
+  name?: String, 
+  contactPointType: Array<String | {    auditInfo?: {      createdDate: String | Null,       updatedBy: String,       isDeleted: Boolean | Null,       createdBy: String,       updatedDate: String | Null,       _?: Any    } {"description": "Defines standard system audit fields available for most types"},     name: String,     optInPriority?: Number | Null,     id: String | Null,     _?: Any  }>, 
+  id: String | Null, 
+  party?: Array<String>, 
+  _?: Any
+}>
+

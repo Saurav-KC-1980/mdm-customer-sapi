@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_1ba54eec_9c40_4daa_ad11_9c07ddb905f5_Input_Variables_contactPointEmailRecords = Any
+

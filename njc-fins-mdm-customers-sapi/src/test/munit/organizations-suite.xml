@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="organizations-suite.xml" />
+	<munit:test name="organizations_post-organizations-test" doc:id="9d522916-cada-4dc3-b8e8-6ba6dabd54dc" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock Call Organizations_Create" doc:id="13ceec41-ff31-4aa5-8a7e-aeb8fee1f1ee" processor="db:stored-procedure">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Call Organizations_Create" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://munittest/organizationspostorganizationstest/mock_payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					<munit-tools:variables >
+						<munit-tools:variable key="outboundHeaders" value="#[readUrl('classpath://munittest/organizationspostorganizationstest/mock_variable_.dwl')]" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="c85e62d8-5168-46ef-9f79-ccb9166b5d8e" >
+				<munit:payload value="#[output application/json --- readUrl('classpath://munittest/organizationspostorganizationstest/set-event_payload.dwl')]" encoding="UTF-8" mediaType="application/json" />
+				<munit:attributes value="#[readUrl('classpath://munittest/organizationspostorganizationstest/set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://munittest/organizationspostorganizationstest/set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to organizations_post-organizations" doc:id="7f46e595-225f-4e4c-9c8f-2cf4fe3a0b31" name="organizations_post-organizations"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="72102dce-b7bf-4058-b8df-93eb73bc81eb" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import munittest::organizationspostorganizationstest::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="organizations_patch-organization-test" doc:id="9d380bf5-ad67-4fb9-9f05-242174f5b5ff" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock Update ORGANIZATION" doc:id="9609f2cf-b22b-40c6-a0ff-4eabdcece6e9" processor="db:update">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Update ORGANIZATION" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://munittest/organizationspatchorganizationtest/mock_payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					<munit-tools:variables >
+						<munit-tools:variable key="organizationDBRecord" value="#[output application/json --- readUrl('classpath://munittest/organizationspatchorganizationtest/mock_variable_.dwl')]" mediaType="application/json" encoding="UTF-8" />
+						<munit-tools:variable key="outboundHeaders" value="#[readUrl('classpath://munittest/organizationspatchorganizationtest/mock_variable_1.dwl')]" />
+						<munit-tools:variable key="organizationId" value="#[output application/java --- readUrl('classpath://munittest/organizationspatchorganizationtest/mock_variable_2.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock organizations_get-organization" doc:id="2eebcc8a-cd33-42aa-84e2-310f0b3fe6c8" processor="flow-ref">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="organizations_get-organization" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/json --- readUrl('classpath://munittest/organizationspatchorganizationtest/mock_payload1.dwl')]" mediaType="application/json" encoding="UTF-8" />
+					<munit-tools:attributes value="#[readUrl('classpath://munittest/organizationspatchorganizationtest/mock_attributes.dwl')]" />
+					<munit-tools:variables >
+						<munit-tools:variable key="organizationDBRecord" value="#[output application/json --- readUrl('classpath://munittest/organizationspatchorganizationtest/mock_variable_3.dwl')]" mediaType="application/json" encoding="UTF-8" />
+						<munit-tools:variable key="outboundHeaders" value="#[readUrl('classpath://munittest/organizationspatchorganizationtest/mock_variable_4.dwl')]" />
+						<munit-tools:variable key="organizationId" value="#[output application/java --- readUrl('classpath://munittest/organizationspatchorganizationtest/mock_variable_5.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="4dba6b4d-516d-4ab0-84ff-81d0e0511781" >
+				<munit:payload value="#[output application/json --- readUrl('classpath://munittest/organizationspatchorganizationtest/set-event_payload.dwl')]" encoding="UTF-8" mediaType="application/json" />
+				<munit:attributes value="#[readUrl('classpath://munittest/organizationspatchorganizationtest/set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://munittest/organizationspatchorganizationtest/set-event_variable_.dwl')]" />
+					<munit:variable key="organizationId" value="#[output application/java --- readUrl('classpath://munittest/organizationspatchorganizationtest/set-event_variable_1.dwl')]" encoding="UTF-8" mediaType="application/java" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to organizations_patch-organization" doc:id="ba632e94-1298-4693-861d-4b5d6c217334" name="organizations_patch-organization"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="bff75286-4ca7-4a2e-838a-eb8cd70e2b8b" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import munittest::organizationspatchorganizationtest::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="organizations_get-organizations-search-test-externalId" doc:id="83212aae-8542-4d25-967f-54c2a0f08bfa" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock Select Parties on Input Params" doc:id="e0dae0df-16b3-42d7-9a03-eaad47634303" processor="db:select">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Select Parties on Input Params" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					<munit-tools:variables >
+						<munit-tools:variable key="outboundHeaders" value="#[readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_.dwl')]" />
+						<munit-tools:variable key="organizationId" value="#[output application/java --- readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_1.dwl')]" mediaType="application/java" encoding="UTF-8" />
+						<munit-tools:variable key="rootMessage" value="#[readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_2.dwl')]" />
+						<munit-tools:variable key="offset" value="#[output application/java --- readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_3.dwl')]" mediaType="application/java" encoding="UTF-8" />
+						<munit-tools:variable key="limit" value="#[output application/java --- readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_4.dwl')]" mediaType="application/java" encoding="UTF-8" />
+						<munit-tools:variable key="externalId" value="#[output application/java --- readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_5.dwl')]" mediaType="application/java" encoding="UTF-8" />
+						<munit-tools:variable key="counter" value="#[readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_6.dwl')]" />
+						<munit-tools:variable key="outputDBRecords" value="#[output application/java --- readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_7.dwl')]" mediaType="application/java" encoding="UTF-8" />
+						<munit-tools:variable key="emailAddress" value="#[output application/java --- readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/mock_variable_8.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="5db626bf-917e-45e2-aa24-b9f262623b29" >
+				<munit:payload value="#[readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/set-event_payload.dwl')]" encoding="UTF-8" />
+				<munit:attributes value="#[readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://munittest/organizationsgetorganizationssearchtestexternalId/set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to organizations_get-organizations-search" doc:id="0bc216aa-8026-41a0-84e5-6b3ee8bd0423" name="organizations_get-organizations-search"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="96a081ef-dfce-4970-9b53-00a3180332b1" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import munittest::organizationsgetorganizationssearchtestexternalId::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+
+</mule>

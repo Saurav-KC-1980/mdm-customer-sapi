@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.mule.tooling.API_SPEC_LIB/06100531-600c-494c-91cc-7f7c373b1144/njc-fins-mdm-customers-sapi/1.0.0"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.modules/mule-apikit-module/1.6.1"/>
+	<classpathentry kind="con" path="org.mule.tooling.API_SPEC_LIB/org.mule.examples/accelerator-global-resources/2.2.0"/>
+	<classpathentry kind="con" path="org.mule.tooling.API_SPEC_LIB/org.mule.examples/accelerator-cim-global-library/1.2.2"/>
+	<classpathentry kind="con" path="org.mule.tooling.API_SPEC_LIB/org.mule.examples/fins-mdm-customers-sys-api-spec/1.5.2"/>
+	<classpathentry kind="con" path="org.mule.tooling.API_SPEC_LIB/org.mule.examples/accelerator-cim-market-library/2.0.5"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.examples/accelerator-banking-config-module/1.1.0"/>
+	<classpathentry kind="con" path="MULE_LIB/com.mulesoft.munit/munit-tools/2.3.14"/>
+	<classpathentry kind="con" path="MULE_LIB/com.mulesoft.munit/munit-runner/2.3.14"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.modules/mule-validation-module/2.0.2"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.connectors/mule-db-connector/1.13.8"/>
+	<classpathentry kind="con" path="org.mule.tooling.MULE_PROJECT_LIB"/>
+	<classpathentry kind="con" path="MULE_LIB/com.mulesoft.modules/mule-secure-configuration-property-module/1.2.5"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.connectors/mule-sockets-connector/1.2.3"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.connectors/mule-http-connector/1.7.2"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.examples/accelerator-common-core/2.4.4"/>
+	<classpathentry exported="true" kind="con" path="MULE_RUNTIME/org.mule.tooling.server.4.4.0.ee"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src/main/mule"/>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/main/resources"/>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java"/>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/resources"/>
+	<classpathentry kind="src" path="src/test/munit"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>

@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_f2dc4f52_08ae_436f_8ac6_049603dc7020_Input_Variables_contactPointAddressRecords = Any
+

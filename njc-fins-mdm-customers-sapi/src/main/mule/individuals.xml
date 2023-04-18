@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="individuals_post-individuals" doc:id="fd466c7c-0a82-4ab5-bb83-d4e4d9121cbd" >
+		<ee:transform doc:name="Map to DB Columns" doc:id="7f3ea0ba-9766-4c3b-8a18-4ba11ba64075" >
+			<ee:message >
+				<ee:set-payload resource="dwl/individuals-post-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="dc9264a1-8d5a-46b5-9691-c37e00fd86ad" >
+			<db:stored-procedure doc:name="Call Individuals_Create" doc:id="1ed65b70-e1db-4551-83c6-5d63367cdaa0" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[{ call Individuals_Create(:individualRequestJSON,:individualId)}]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+	individualRequestJSON : write(payload, "application/json")
+}]]]></db:input-parameters>
+				<db:output-parameters >
+					<db:output-parameter key="individualId" type="NVARCHAR" />
+				</db:output-parameters>
+			</db:stored-procedure>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="52833dd6-0165-46e1-b158-4f664ab4b5f4" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="15310b44-926c-4b03-a0e3-e4cff3f41dd8" name="common-error-handler_connector-exception"/>
+					<set-variable value="409" doc:name="httpStatus" doc:id="37e64d23-71d8-40ca-b9ab-df29f512a89f" variableName="httpStatus" />
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="92daf55b-e58c-4e9a-96b8-2788703e1328" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="ae668616-cf37-41ed-9693-922cc34ae466" doc:name="Map Response">
+			<ee:message>
+				<ee:set-payload resource="dwl/individuals-success.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+201]]></ee:set-variable>
+						<ee:set-variable resource="dwl/individuals-create-response-headers.dwl" variableName="outboundHeaders" />
+			
+			</ee:variables>		
+		</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="individuals_patch-individual" doc:id="b3fef144-f5f3-47d2-8bd3-b8eb996342c7" >
+		<flow-ref doc:name="individuals_get-individual" doc:id="b1c91070-769a-4249-ab97-6fe99e1a17b4" name="individuals_get-individual" target="individualDBRecord"/>
+		<choice doc:name="Choice" doc:id="a8be2ca8-5d8d-461a-88be-214347a70671" >
+			<when expression="#[(vars.exceptionResponse == null) and (vars.individualDBRecord.errorCode == null)]">
+				<ee:transform doc:name="Map to DB Columns" doc:id="ca1e5c87-c0dd-4715-9bef-c45c4a34de3e">
+			<ee:message>
+						<ee:set-payload resource="dwl/individuals-patch-payload.dwl" />
+			</ee:message>
+		</ee:transform>
+			<try doc:name="Try" doc:id="fd8fc2be-ba7a-4eb1-8b46-2b90c2e25041" >
+			<db:update doc:name="Update INDIVIDUAL" doc:id="f1788851-7ff3-48de-b13d-60476f422ef6" config-ref="mdm-db-config">
+				<db:sql ><![CDATA[update INDIVIDUAL set GLOBAL_PARTY=:globalParty,PARTY_TYPE=:partyType,NO_MERGE_REASON=:noMergeReason,BIRTH_DATE=:birthDate,BIRTH_PLACE=:birthPlace,CHILDREN_COUNT=:childrenCount,CONSUMER_CREDIT_SCORE=:consumerCreditScore,CONSUMER_CREDIT_SCORE_PROVIDER_NAME=:consumerCreditScoreProviderName,CONVICTIONS_COUNT=:convictionsCount,CURRENT_EMPLOYER_NAME=:currentEmployerName,DEATH_DATE=:deathDate,DEATH_PLACE=:deathPlace,DEPENDENT_COUNT=:dependentCount,DO_EXTRACT_MY_DATA_UPDATE_DATE=:doExtractMyDataUpdateDate,DO_FORGET_ME_FROM_UPDATE_DATE=:doForgetMeFromUpdateDate,DO_NOT_MARKET_FROM_UPDATE_DATE=:doNotMarketFromUpdateDate,DO_NOT_PROCESS_FROM_UPDATE_DATE=:doNotProcessFromUpdateDate,DO_NOT_PROCESS_REASON=:doNotProcessReason,DO_NOT_PROFILE_FROM_UPDATE_DATE=:doNotProfileFromUpdateDate,DO_NOT_TRACK_LOCATION_UPDATE_DATE=:doNotTrackLocationUpdateDate,DO_NOT_TRACK_UPDATE_DATE=:doNotTrackUpdateDate,EMPLOYED_SINCE_DATE=:employedSinceDate,ETHNICITY=:ethnicity,FIRST_NAME=:firstName,GENDER=:gender,HAS_ALCOHOL_ABUSE_HISTORY=:hasAlcoholAbuseHistory,HAS_DRUG_ABUSE_HISTORY=:hasDrugAbuseHistory,HIGHEST_EDUCATION_LEVEL=:highestEducationLevel,HOSPITALIZATIONS_LAST5_YEARS_COUNT=:hospitalizationsLast5YearsCount,INFLUENCER_RATING=:influencerRating,IS_ALCOHOL_CONSUMER=:isAlcoholConsumer,IS_DRUG_CONSUMER=:isDrugConsumer,IS_GOOD_DRIVER=:isGoodDriver,IS_GOOD_STUDENT=:isGoodStudent,IS_HIGH_RISK_HOBBY=:isHighRiskHobby,IS_HIGH_RISK_OCCUPATION=:isHighRiskOccupation,IS_HOME_OWNER=:isHomeOwner,IS_TOBACCO_CONSUME=:isTobaccoConsume,LAST_NAME=:lastName,MAILING_NAME=:mailingName,MAIN_DIETARY_HABIT_TYPE=:mainDietaryHabitType,MAIN_DISABILITY_TYPE=:mainDisabilityType,MAIN_LIFE_ATTITUDE_TYPE=:mainLifeAttitudeType,MAIN_LIFE_STYLE_TYPE=:mainLifeStyleType,MAIN_PERSONAL_VALUE_TYPE=:mainPersonalityType,MAIN_PERSONALITY_TYPE=:mainPersonalValueType,MAJOR_CITATION_COUNT=:majorCitationCount,MARITAL_STATUS=:maritalStatus,MIDDLE_NAME=:middleName,MILITARY_SERVICE=:militaryService,MILITARY_STATUS=:militaryStatus,MINOR_CITATION_COUNT=:minorCitationCount,MOTHERS_MAIDEN_NAME=:mothersMaidenName,NAME_SUFFIX=:nameSuffix,NET_WORTH=:netWorth,OCCUPATION=:occupation,OCCUPATION_TYPE=:occupationType,OFFICIAL_NAME=:officialName,ORDERING_NAME=:orderingName,OVER_AGE_NUMBER=:overAgeNumber,PERSON_HEIGHT=:personHeight,PERSON_HEIGHT_UNIT_OF_MEASURE=:personHeightUnitOfMeasure,PERSON_LIFE_STAGE=:personLifeStage,PERSON_NAME=:personName,PERSON_WEIGHT=:personWeight,PERSON_WEIGHT_UNIT_OF_MEASURE=:personWeightUnitOfMeasure,PHOTO_URL=:photoURL,PREFERRED_NAME=:preferredName,PRIMARY_HOBBY=:primaryHobby,RELIGION=:religion,RESIDENCE_CAPTURE_METHOD=:residenceCaptureMethod,RESIDENCE_COUNTRY_NAME=:residenceCountryName,SALUTATION=:salutation,SECOND_LAST_NAME=:secondLastName,SEND_INDIVIDUAL_DATA=:sendIndividualData,SHOULD_FORGET=:shouldForget,SURGERIES_LAST5_YEARS_COUNT=:surgeriesLast5YearsCount,TAX_BRACKET_RANGE=:taxBracketRange,WEB_SITE_URL=:webSiteURL,WEDDING_ANNIVERSARY_DATE=:weddingAnniversaryDate,YEARLY_INCOME=:yearlyIncome,YEARLY_INCOME_RANGE=:yearlyIncomeRange,UPDATED_BY=:updatedBy,UPDATED_DATE=:updatedDate where ID =:id]]></db:sql>
+				<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+			</db:update>
+			<ee:transform xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="680cd97b-0ab2-43f5-bc75-85d18c6684ba" doc:name="Map Response">
+			<ee:message>
+						<ee:set-payload resource="dwl/individuals-patch-message.dwl" />
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+if(payload.affectedRows==0) 400 else 200]]></ee:set-variable>
+			</ee:variables>		
+		</ee:transform>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6c3998e6-ed5d-4342-bf39-6781fac3dd45" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<set-variable value="500" doc:name="httpStatus" doc:id="4a7da28f-9446-414d-a29c-be119c875b38" variableName="httpStatus" />
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="a307b3cf-2fb3-41d3-a927-bb087a12b209" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_STORED_PROC_FAILURE" doc:id="3d233947-0694-4955-ac00-7756ac850ab0" type="FINS:DB_STORED_PROC_FAILURE" description="Failed to execute Stored Procedure" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1235fab8-53bd-4986-ae57-72fcc55eb774" />
+				<set-variable value="404" doc:name="httpStatus" doc:id="ba47e2c5-3f54-4654-8d9e-e2307d89601f" variableName="httpStatus"/>
+				<flow-ref doc:name="common-error-handler_connector-exception" doc:id="1354a1f9-a7aa-401f-adff-4bd9869e2619" name="common-error-handler_connector-exception"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	
+	<sub-flow name="individuals_get-individual" doc:id="a202a34b-14b1-441c-b53f-fe6fd5872e11" >
+		<logger level="INFO" doc:name="Log Request" doc:id="7e96e326-59e8-477b-84a8-d9ee8c686a78" message="#[attributes.queryParams]"/>
+		<try doc:name="Try" doc:id="fb1971aa-7b14-4f95-a997-c8df1f460a46" >
+			<db:select doc:name="Select Individual Party" doc:id="30189d82-fce1-4564-b9b3-8a99c454b36c" config-ref="mdm-db-config">
+			<db:sql><![CDATA[Select indv.BIRTH_DATE,indv.BIRTH_PLACE,indv.CHILDREN_COUNT,indv.CONSUMER_CREDIT_SCORE,indv.CONSUMER_CREDIT_SCORE_PROVIDER_NAME,indv.CONVICTIONS_COUNT,indv.CREATED_BY,indv.CREATED_DATE,indv.CURRENT_EMPLOYER_NAME,indv.DEATH_DATE,indv.DEATH_PLACE,indv.DEPENDENT_COUNT,indv.DO_EXTRACT_MY_DATA_UPDATE_DATE,indv.DO_FORGET_ME_FROM_UPDATE_DATE,indv.DO_NOT_MARKET_FROM_UPDATE_DATE,indv.DO_NOT_PROCESS_FROM_UPDATE_DATE,indv.DO_NOT_PROCESS_REASON,indv.DO_NOT_PROFILE_FROM_UPDATE_DATE,indv.DO_NOT_TRACK_LOCATION_UPDATE_DATE,indv.DO_NOT_TRACK_UPDATE_DATE,indv.EMPLOYED_SINCE_DATE,indv.ETHNICITY,indv.FIRST_NAME,indv.GENDER,indv.GLOBAL_PARTY,indv.HAS_ALCOHOL_ABUSE_HISTORY,indv.HAS_DRUG_ABUSE_HISTORY,indv.HIGHEST_EDUCATION_LEVEL,indv.HOSPITALIZATIONS_LAST5_YEARS_COUNT,indv.ID,indv.INFLUENCER_RATING,indv.IS_ALCOHOL_CONSUMER,indv.IS_DRUG_CONSUMER,indv.IS_GOOD_DRIVER,indv.IS_GOOD_STUDENT,indv.IS_HIGH_RISK_HOBBY,indv.IS_HIGH_RISK_OCCUPATION,indv.IS_HOME_OWNER,indv.IS_TOBACCO_CONSUME,indv.LAST_NAME,indv.MAILING_NAME,indv.MAIN_DIETARY_HABIT_TYPE,indv.MAIN_DISABILITY_TYPE,indv.MAIN_LIFE_ATTITUDE_TYPE,indv.MAIN_LIFE_STYLE_TYPE,indv.MAIN_PERSONAL_VALUE_TYPE,indv.MAIN_PERSONALITY_TYPE,indv.MAJOR_CITATION_COUNT,indv.MARITAL_STATUS,indv.MIDDLE_NAME,indv.MILITARY_SERVICE,indv.MILITARY_STATUS,indv.MINOR_CITATION_COUNT,indv.MOTHERS_MAIDEN_NAME,indv.NAME_SUFFIX,indv.NET_WORTH,indv.NO_MERGE_REASON,indv.OCCUPATION,indv.OCCUPATION_TYPE,indv.OFFICIAL_NAME,indv.ORDERING_NAME,indv.OVER_AGE_NUMBER,indv.PARTY_TYPE,indv.PERSON_HEIGHT,indv.PERSON_HEIGHT_UNIT_OF_MEASURE,indv.PERSON_LIFE_STAGE,indv.PERSON_NAME,indv.PERSON_WEIGHT,indv.PERSON_WEIGHT_UNIT_OF_MEASURE,indv.PHOTO_URL,indv.PREFERRED_NAME,indv.PRIMARY_HOBBY,indv.RELIGION,indv.RESIDENCE_CAPTURE_METHOD,indv.RESIDENCE_COUNTRY_NAME,indv.SALUTATION,indv.SECOND_LAST_NAME,indv.SEND_INDIVIDUAL_DATA,indv.SHOULD_FORGET,indv.SURGERIES_LAST5_YEARS_COUNT,indv.TAX_BRACKET_RANGE,indv.UPDATED_BY,indv.UPDATED_DATE,indv.WEB_SITE_URL,indv.WEDDING_ANNIVERSARY_DATE,indv.YEARLY_INCOME,indv.YEARLY_INCOME_RANGE,
+p.ID PARTY_ID,eipj.EXTERNAL_ID EXTERNAL_ID_ID ,ei.EXTERNAL_ID EXTERNAL_ID,ei.EXTERNAL_ID_TYPE EXTERNAL_ID_TYPE,ei.STATUS STATUS,ei.STATUS_LAST_CHANGED_DATE STATUS_LAST_CHANGED_DATE , eit.ID EXTERNAL_ID_TYPE_ID, eit.NAME EXTERNAL_ID_TYPE_NAME
+from INDIVIDUAL indv, PARTY p,EXTERNAL_ID_PARTY_JOIN eipj,EXTERNAL_ID ei,EXTERNAL_ID_TYPE eit where indv.ID = :individualId and eipj.PARTY_ID =p.ID and ei.id = eipj.EXTERNAL_ID and  eit.ID = ei.EXTERNAL_ID_TYPE  ]]></db:sql>
+				<db:input-parameters ><![CDATA[#[individualId : vars.individualId]]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5dbcf914-b05c-4671-977c-060d9df1d586" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="549d4521-98fd-4a74-8f55-3d9360638cef" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="2fb134fb-7ee7-4e09-902c-f6bf8c7e816e" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="75dd7344-0764-4371-968b-7c6c64b56496">
+			<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="2cdd0818-1eaf-42c3-b4ba-eb5d516496ea" message="Individual Party not found" />
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a40fed7c-8d0e-4753-b32e-2a66ee6511b6">
+					<set-variable value="404" doc:name="httpStatus 404" doc:id="af71d01e-09f4-4a7e-8bba-95c15058bc0c" variableName="httpStatus" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="partyId" doc:id="8e7c3431-7494-4cb0-99b3-a7efbb69ec53">
+					<ee:message>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="partyId"><![CDATA[%dw 2.0
+output application/java
+---
+vars.individualId]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+		<flow-ref doc:name="parties_get-externalIds" doc:id="96feae42-dd51-492f-b71c-72c420f3edf9" name="parties_get-externalids" target="individualsExternalIds" />
+		<ee:transform doc:name="Has Results" doc:id="3e926510-ec6c-4369-9c1f-5ad96078dc75">
+			<ee:message>
+						<ee:set-payload resource="dwl/individuals-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Return First Object" doc:id="39dec8d3-dcba-460a-b483-03a14b77aa5a">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+	</sub-flow>
+	
+	<sub-flow name="individuals_get-individuals-search" doc:id="a55211b2-13a1-471f-9256-f4b148eab2a1" >
+		<logger level="INFO" doc:name="Log Request" doc:id="e68eb143-a7f7-4c14-9cfc-4946128b7d86" message="#[attributes.queryParams]"/>
+		<ee:transform doc:name="Input Query Parameters" doc:id="c4f8942f-79ae-478a-a3e6-f7c948d5ed3f" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="externalId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.externalId]]></ee:set-variable>
+				<ee:set-variable variableName="emailAddress" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.emailAddress]]></ee:set-variable>
+				<ee:set-variable variableName="offset" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.offset default p('mdm.database.default-offset')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.queryParams.limit default p('mdm.database.default-limit')) as Number]]></ee:set-variable>
+				<ee:set-variable variableName="individualId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.individualId]]></ee:set-variable>
+				<ee:set-variable variableName="outputDBRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Create Query based on Input Parameters" doc:id="d1b691c2-5253-426b-89cc-9eea561713f5" >
+			<ee:message >
+				<ee:set-payload resource="dwl/individuals-search-queries.dwl" />
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="bb44799a-58aa-4f0e-9e29-afccb5e0de99" >
+			<foreach doc:name="Execute All Queries in Sequence only if no results" doc:id="83410b0f-bb5d-431c-b822-e72763152431" collection="#[payload]">
+				<choice doc:name="Check for Valid Query only if No Previous Results for previous query" doc:id="423145d8-8049-4570-8739-15ed578626ad">
+				<when expression="#[payload != null and (sizeOf(vars.outputDBRecords) == 0)]">
+					<db:select doc:name="Select Parties on Input Params" doc:id="4c8f0442-b5d2-4071-b28e-e3f7f65653f7" config-ref="mdm-db-config">
+			<db:sql><![CDATA[#[payload]]]></db:sql>
+		</db:select>
+						<ee:transform doc:name="Transform Message" doc:id="96c31398-fa96-44af-89d4-3f8444be57bb" >
+							<ee:message >
+							</ee:message>
+							<ee:variables >
+								<ee:set-variable resource="dwl/individuals-search-outputDBRecords.dwl" variableName="outputDBRecords" />
+							</ee:variables>
+						</ee:transform>
+				</when>
+					<otherwise>
+						<logger level="INFO" doc:name="No Records" doc:id="d16522db-45ed-40a0-a0e7-dcd210a5bc77" message="No Records"/>
+				</otherwise>
+			</choice>
+			</foreach>
+			<set-payload value="#[vars.outputDBRecords]" doc:name="Set outputDBRecords and Result" doc:id="f34daaa9-7bbc-4c9d-bc2e-8aaed61b4cf9" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b971376e-f29b-4374-b745-834ce5d93993" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION">
+					<flow-ref doc:name="common-error-handler_connector-exception" doc:id="bd2f38e0-c5b3-4e15-a9ff-3f56cd9cefba" name="common-error-handler_connector-exception"/>
+					<raise-error doc:name="FINS:DB_SELECT_FAILURE" doc:id="ef7bfcab-87d7-4d47-8eb6-a7e5fc750493" type="FINS:DB_SELECT_FAILURE" description="Failed to execute SELECT" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Has Results" doc:id="8380ccf3-4175-4882-8ad9-62daf08bed60">
+			<ee:message>
+						<ee:set-payload resource="dwl/individuals-get-response.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	
+	
+	
+	
+</mule>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.mule.examples</groupId>
+		<artifactId>accelerator-pom-parent</artifactId>
+		<version>2.4.4</version>
+	</parent>
+
+	<groupId>org.mule.examples</groupId>
+	<artifactId>fins-mdm-customers-sys-api</artifactId>
+	<version>1.6.0</version>
+	<packaging>mule-application</packaging>
+
+	<name>njc-fins-mdm-customers-sapi</name>
+
+	<properties>
+		<api.name>FINS MDM Customers System API</api.name>
+		<api.version>v1</api.version>
+		<accelerator-common-core.version>2.4.4</accelerator-common-core.version>
+		<mariadb-java-client.version>3.0.7</mariadb-java-client.version>
+		<anypoint.platform.visualizerLayer>System</anypoint.platform.visualizerLayer>
+		<!-- This application requires a larger worker than the default -->
+		<cloudhub.worker.type>SMALL</cloudhub.worker.type>
+		<cloudhub.worker.count>1</cloudhub.worker.count>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.mule.tools.maven</groupId>
+				<artifactId>mule-maven-plugin</artifactId>
+				<extensions>true</extensions>
+				<configuration>
+					<sharedLibraries>
+						<sharedLibrary>
+							<groupId>org.mariadb.jdbc</groupId>
+							<artifactId>mariadb-java-client</artifactId>
+						</sharedLibrary>
+					</sharedLibraries>
+					<cloudHubDeployment>
+						<workerType>${cloudhub.worker.type}</workerType>
+						<workers>${cloudhub.worker.count}</workers>
+						<properties>
+							<!-- These properties must be defined in the target Maven deployment profile -->
+							<mdm.database.password>${mdm.database.password}</mdm.database.password>
+						</properties>
+					</cloudHubDeployment>
+					<classifier>mule-application</classifier>
+				</configuration>
+				<version>3.8.0</version>
+			</plugin>
+			<plugin>
+				<groupId>com.mulesoft.munit.tools</groupId>
+				<artifactId>munit-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.mule.examples</groupId>
+				<artifactId>knit-maven-plugin</artifactId>
+				<configuration>
+					<moduleList>contactpointsaddress-storedprocedure-request,contactpointsemail-storedprocedure-request,contactpointsphone-storedprocedure-request,contactpoints-get-response,get-contactpoints-externalids-response,customers-post-payload,customers-patch-payload,customers-get-response,customers-search-response,post-externalids-payload,get-externalids-response,partyroles-get-response,get-related-parties-response,put-related-parties-payload,parties-get-response,parties-related-parties-externalids,individuals-post-payload,individuals-patch-payload,individuals-get-response,organizations-post-payload,organizations-patch-payload,organizations-get-response,households-post-payload,households-patch-payload,households-get-response</moduleList>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>${project.parent.groupId}</groupId>
+			<artifactId>accelerator-common-core</artifactId>
+			<version>${accelerator-common-core.version}</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-http-connector</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-apikit-module</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-sockets-connector</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.modules</groupId>
+			<artifactId>mule-secure-configuration-property-module</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-db-connector</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-validation-module</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mariadb.jdbc</groupId>
+			<artifactId>mariadb-java-client</artifactId>
+			<version>${mariadb-java-client.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.munit</groupId>
+			<artifactId>munit-runner</artifactId>
+			<classifier>mule-plugin</classifier>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.munit</groupId>
+			<artifactId>munit-tools</artifactId>
+			<classifier>mule-plugin</classifier>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.examples</groupId>
+			<artifactId>accelerator-banking-config-module</artifactId>
+			<version>1.1.0</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.examples</groupId>
+			<artifactId>fins-mdm-customers-sys-api-spec</artifactId>
+			<version>1.5.2</version>
+			<classifier>raml</classifier>
+			<type>zip</type>
+		</dependency>
+		<dependency>
+			<groupId>06100531-600c-494c-91cc-7f7c373b1144</groupId>
+			<artifactId>njc-fins-mdm-customers-sapi</artifactId>
+			<version>1.0.0</version>
+			<classifier>raml</classifier>
+			<type>zip</type>
+		</dependency>
+	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>anypoint-exchange-v3</id>
+			<name>Anypoint Exchange</name>
+			<url>https://maven.anypoint.mulesoft.com/api/v3/maven</url>
+			<layout>default</layout>
+		</repository>
+	</repositories>
+
+</project>

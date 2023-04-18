@@ -1,0 +1,83 @@
+%dw 2.0
+
+type auto_a453785e_9c77_41c0_b1da_e3ce9bb24430_Output_Variables_errors = Array<String> | Array<org_mule_runtime_api_message_Error>
+type org_mule_runtime_api_message_Error = {|
+  cause?: java_lang_Throwable, 
+  childErrors?: Array<org_mule_runtime_api_message_Error>, 
+  description?: String, 
+  detailedDescription?: String, 
+  errorMessage?: org_mule_runtime_api_message_Message, 
+  errorType?: org_mule_runtime_api_message_ErrorType, 
+  failingComponent?: String
+|} {"typeId": "org.mule.runtime.api.message.Error"}
+type org_mule_runtime_api_message_ErrorType = {|
+  identifier?: String, 
+  namespace?: String, 
+  parentErrorType?: org_mule_runtime_api_message_ErrorType
+|} {"typeId": "org.mule.runtime.api.message.ErrorType"}
+
+
+type java_lang_Throwable = {|
+  cause?: java_lang_Throwable, 
+  localizedMessage?: String, 
+  message?: String, 
+  stackTrace?: Array<java_lang_StackTraceElement>, 
+  suppressed?: Array<java_lang_Throwable>
+|} {"class": "java.lang.Throwable",
+"typeId": "java.lang.Throwable"}
+type java_lang_StackTraceElement = {|
+  classLoaderName?: String, 
+  className?: String, 
+  fileName?: String, 
+  lineNumber?: Number, 
+  methodName?: String, 
+  moduleName?: String, 
+  moduleVersion?: String, 
+  nativeMethod?: Boolean {"typeId": "boolean"}
+|} {"typeId": "java.lang.StackTraceElement"}
+
+
+
+
+type org_mule_runtime_api_message_Message = {|
+  attributes?: org_mule_runtime_api_metadata_TypedValue, 
+  payload?: org_mule_runtime_api_metadata_TypedValue_30
+|} {"typeId": "org.mule.runtime.api.message.Message"}
+type org_mule_runtime_api_metadata_TypedValue = {|
+  byteLength?: java_util_OptionalLong, 
+  dataType?: org_mule_runtime_api_metadata_DataType, 
+  length?: java_util_Optional_27, 
+  value?: java_lang_Object
+|} {"typeId": "org.mule.runtime.api.metadata.TypedValue"}
+type org_mule_runtime_api_metadata_DataType = org_mule_runtime_api_metadata_DataType
+
+
+type java_util_Optional_27 = java_util_Optional_27
+
+
+type java_lang_Object = {|  |} {"class": "java.lang.Object",
+"typeId": "java.lang.Object"}
+
+
+type java_util_OptionalLong = java_util_OptionalLong
+
+
+
+
+type org_mule_runtime_api_metadata_TypedValue_30 = {|
+  byteLength?: java_util_OptionalLong, 
+  dataType?: org_mule_runtime_api_metadata_DataType, 
+  length?: java_util_Optional_27, 
+  value?: java_lang_Object_31
+|} {"typeId": "org.mule.runtime.api.metadata.TypedValue"}
+type java_lang_Object_31 = {|  |} {"class": "java.lang.Object",
+"typeId": "java.lang.Object"}
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,4 @@
+# API specification
+api:
+  name: "${project.artifactId}"
+  version: "${project.version}"
